@@ -1,5 +1,160 @@
-\documentclass{article}
+\documentclass[12pt,final]{article}
+\usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
+
+
+\newcommand{\mir}{\texttt{MIR}}
+
 \begin{document}
-(Type your content here.)
+\title{Locality Optimizing Compiler Transforms in Rust}
+\author{Jacob Bisnett}
+\maketitle
+
+\section{Introduction}
+\label{sec:intro}
+
+Something about memory wall, scientific computing, research. Computers are slow...
+
+\paragraph{What is structure splitting}
+% cite structure splitting paper.
+
+\paragraph{How does structure splitting help}
+General improvements
+
+\paragraph{What solutions to structure splitting exist currently}
+Ideally want a few more example here
+
+\paragraph{How do they fail?}
+Most of the time either the languages they use are not "safe" enough, ie have pointer arithmetic. 
+%was there structure splitting done in Fortran
+
+\paragraph{What does my solution do differently}
+
+One of the major problems with
+structure splitting is that most languages in which it would be beneficial to
+implement it in have very weak safety guarantees, to the point that any
+structure splitting approach would have an unacceptable effect on semantics, and
+thus implementing structure splitting automatically would be a bad idea.
+
+My solution doesn't have this issue because, since it's done in Rust unsafe behavior is very limited.
+
+\subsection{Why Rust}
+%https://tonyarcieri.com/it-s-time-for-a-memory-safety-intervention
+
+\subsection{MIR}
+%introducing mir: https://blog.rust-lang.org/2016/04/19/MIR.html
+%mir rfc: https://github.com/rust-lang/rfcs/blob/master/text/1211-mir.md 
+
+\section{Goals}
+\label{sec:goal}
+
+\begin{enumerate}
+\item Opt-in
+\item Semantically equivalent
+
+\end{enumerate}
+
+\section{Approach}
+
+My approach to solving this problem was a series of high level compiler passes
+that make 
+
+\begin{enumerate}
+\item Macros that split the struct
+\item Change all arguments to functions and return values from Struct $\rightarrow$ (Struct1, Struct2, ...)
+\item Extract the components of the tuple 
+\item Change projections (struct.a) to their corresponding value (struct1.a)
+\item Change wholesale struct assignments to assignments of the pieces 
+
+struct = a;
+
+To be
+
+struct1 = a1;
+struct2 = a2;
+
+Split structs then exist in three types
+
+\end{enumerate}
+
+%poor phrasing, but need to eventually say this stuff somewhere.
+There are multiple ways in which structs are represented in the MIR. 
+\begin{enumerate}
+\item Completely seperate: Not even part of the same tuple
+\item Tupled: used for function args in the same crate
+\item Fully reformed: used for passing function args to a different crate. (might change, might not even implement)
+\end{enumerate}
+\section{Issues}
+
+While in common cases this approach works very well, there are a few issues with
+it, most of which resulting from the fact that Rust does not have a languages
+standard. As such, it is difficult to be certain that the compiler pass will
+have no semantic effect on the code. It works within the current Rust
+implementation, but manual testing can only be so successful.
+% possibly cite the commit hash?
+
+\subsection{Unsafety}
+\label{sec:unsafe}
+
+
+Another major issue is that, because there is no language standard, there is no
+good way of dealing with unsafe code. Unsafe code allows for raw pointer
+arithmetic, which breaks structure splitting. Rust does have the benefit that
+unsafe code must be contained in explicitly declared code blocks.
+
+\subsection{Rust Culture}
+\label{sec:culture}
+
+Rust, as opposed to one of it's parent language's \texttt{Haskell}, has no good
+formal specification. The specification for \mir are practically non-existent.
+The closest thing there is are an RFC proposing \mir, and a blog post announcing
+it, neither of which specify exactly what it can do, and both of which are now
+out of date with the current implementation .
+
+\section{Notes}
+\label{sec:remove}
+
+\subsection{Justification}
+\label{sec:just}
+
+\paragraph{Premonomorphization} Helpful for several reasons
+\begin{enumerate}
+\item Could lower compilation time by not having to regenerate code
+\item  Easier to process in our particular case
+\end{enumerate}
+
+\paragraph{Shorter Compilation Times} One of the biggest sticking points for
+Rust is that compilation times are quite long, in part due to LLVM taking
+significant time in the compilation process (citation needed). Rust's safety
+could potentially allow for excellent incremental compilation down to the basic
+block level (citation needed). Additionally, LLVM takes a significant part of
+Rust compilation times, and moving some optimization up from LLVM to Rust means
+that other, faster backends can become for feasible. LLVM is also not
+necissarily the best at compiling for certain architectures, such as WebASM.
+With Rust getting WebASM as an alternate backend at some point, developing Rust
+specific optimizations could be good.
+
+%https://github.com/rust-lang/rust/issues/33205
+
+\subsection{Rvalue Type induction}
+Need to update the \texttt{AggregateKind::Array} so that it references the right Ty
+
+\section{Challenges}
+\label{sec:annoying}
+
+\subsection{Deriving}
+Most seem to be ok, but some combinations of derivations make things really
+annoying, ie \texttt{Copy} and \texttt{Clone}.
+
+\subsection{Polymorphism}
+
+\subsection{User defined data structures}
+Arrays are fine, but are difficult to use on their own. You really need to
+handle Vectors, and Vectors are... complecated. Basically we needed to define a
+trait, and users need to implement that trait on objects when it is safe to, ie
+when it is stored in a ``dumb'' way, that doesn't semantically depend on the
+contents of the object. This allows for potentially better cache behavior in
+stuff such as HashMaps.
+
+
 \end{document}
