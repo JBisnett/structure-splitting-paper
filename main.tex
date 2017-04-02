@@ -55,10 +55,10 @@ My solution doesn't have this issue because, since it's done in Rust unsafe beha
 
 \end{enumerate}
 
-\section{Approach}
+\section{Structure Splitting in Rust}
 
-My approach to solving this problem was a series of high level compiler passes
-that make 
+My approach to solving this problem was a series of compiler passes that 
+split Rust structs.   
 
 \begin{enumerate}
 \item Macros that split the struct
@@ -107,7 +107,7 @@ unsafe code must be contained in explicitly declared code blocks.
 \label{sec:culture}
 
 Rust, as opposed to one of it's parent language's \texttt{Haskell}, has no good
-formal specification. The specification for \mir are practically non-existent.
+formal specification. The specification for \mir are practically non-existent. %https://github.com/rust-specification/english-specification
 The closest thing there is are an RFC proposing \mir, and a blog post announcing
 it, neither of which specify exactly what it can do, and both of which are now
 out of date with the current implementation .
