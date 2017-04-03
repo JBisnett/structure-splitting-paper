@@ -112,6 +112,21 @@ There are multiple ways in which structs are represented in the MIR.
 \item Tupled: used for function args in the same crate
 \item Fully reformed: used for passing function args to a different crate. (might change, might not even implement)
 \end{enumerate}
+
+\section{Discussion}
+\label{sec:discuss}
+
+This project is very much more of a platform for further research then a
+standalone project. At the time of writing simple structure splitting
+with arrays and references is all that is completed, and 
+while I was successful is performing locality based
+optimizations in that specific case without the usual run time overhead typical of structure splitting
+work, there is considerably more work to be done until I would consider this
+a project that should be usable by the average user.
+
+The first, and most important, requirement would be to allow for the splitting
+of certain types of user defined structures.
+
 \section{Issues}
 
 While in common cases this approach works very well, there are a few issues with
