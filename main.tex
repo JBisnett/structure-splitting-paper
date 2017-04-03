@@ -2,8 +2,10 @@
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
 
-
-\newcommand{\mir}{\texttt{MIR}}
+\newcommand{\rustname}{{\small \em Rust}}
+\def\rust{\rustname}
+\newcommand{\mirname}{{\small \em MIR}}
+\def\mir{\mirname}
 
 \begin{document}
 \title{Locality Optimizing Compiler Transforms in Rust}
@@ -56,8 +58,34 @@ My solution doesn't have this issue because, since it's done in Rust unsafe beha
 
 \section{Structure Splitting in Rust}
 
-My approach to solving this problem was a series of compiler passes that 
-split Rust structs.   
+My approach to solving this problem was a series of compiler passes that, at a high level:
+split Rust structs into some number of sub structures, modify function signature to accomidate this change,
+and make edits to the \rust intermediate representation, called \mir, in order 
+to actually perform the modifications.
+
+\subsection{Structure Splitting}
+Splitting \rust structs is the simplest part of the process. I made the decision to let the user decide
+on how to split the struct. This is because I did not think that explicitly including automatic control would 
+be very beneficial. This was for three main reasons. 
+
+Firstly it was mandatory that the strategy used for structure splitting be modifiable by the user.
+Since the structure splitting operation is so global and such a potential performance improvement,
+some small change could end up resulting in massive performance gains or losses. Since it is impossible
+to come up with a $100\%$ correct automated strategy, allowing a manual override is important, or else
+user could potentially prevented from making important changes to their code since it could break the optimization.
+
+Secondly, deciding how to split a structure is already a solved problem,
+%cite structure splitting
+but the process is rather expensive. It seems like a better idea to just allow the user to either; one, 
+intelligently reason about there program and split their structure how it makes the most sense, or two, 
+let them build an already existing tracing solution into their build system, and thus get the advantage
+of deciding when and where to spend the computation time.
+
+Thirdly, it is important that structure splitting be an ``opt-in" process. While \rust is by default
+a memory safe language, \rust has an unsafety system that code allows for the same pointer arithmetic 
+issues that \texttt{C} and other unsafe languages have. In \rust this unsafe code must be explicitly
+declared, but exactly what unsafe code can do has yet to be fully defined. Thus forcing the user to explicitly 
+turn structure splitting on, as well as reasoning about what it could mean for their program, is important.
 
 \begin{enumerate}
 \item Macros that split the struct
