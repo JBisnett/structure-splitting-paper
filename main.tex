@@ -1,6 +1,10 @@
 \documentclass[12pt,final]{article}
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
+\usepackage{listing}
+
+
+\newcommand{\rust}[1]{\mintinline{rust}{#1}}
 
 \newcommand{\rustname}{{\small \em Rust}}
 \def\rust{\rustname}
@@ -103,6 +107,8 @@ struct2 = a2;
 
 Split structs then exist in three types
 
+Need to handle function signatures properly
+
 \end{enumerate}
 
 %poor phrasing, but need to eventually say this stuff somewhere.
@@ -124,8 +130,40 @@ optimizations in that specific case without the usual run time overhead typical 
 work, there is considerably more work to be done until I would consider this
 a project that should be usable by the average user.
 
+\begin{figure*}
+ \begin{minted}[autogobble]{rust}
+    struct Mir {
+        basic_blocks: Vec<BasicBlockData>,
+        // ...
+    }
+
+    struct BasicBlockData {
+        statements: Vec<Statement>,
+        terminator: Terminator,
+        // ...
+    }
+
+    struct Statement {
+        lvalue: Lvalue,
+        rvalue: Rvalue
+    }
+
+    enum Terminator {
+        Goto { target: BasicBlock },
+        If {
+            cond: Operand,
+            targets: [BasicBlock; 2]
+        },
+        // ...
+    }
+\end{minted} 
+  \caption{Vec Splitting}
+  \label{fig:vec-split}
+\end{figure*}
+
 The first, and most important, requirement would be to allow for the splitting
-of certain types of user defined structures.
+of certain types of user defined structures. The first, and most obvious,
+benefit for this would be for allowing Vec, to be split as in Figure
 
 \section{Issues}
 
