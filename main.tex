@@ -18,15 +18,18 @@
 \newcommand{\mlname}{{\texttt ML}}
 \def \ml {\mlname{}\xspace}
 
+
+
 \begin{document}
 \title{Locality Optimizing Compiler Transforms in Rust}
 \author{Jacob Bisnett}
 \maketitle
 
+\bibliography{main}{}
+\bibliographystyle{acm}
 \section{Introduction}
 \label{sec:intro}
 
-\paragraph{What is Rust}
 % I don't want to talk about Rust forever,but if I need to say more I will
 The programming language \rust is fairly new, but already gained a considerable
 following due to its placement as a safe and easy to use alternative to \c and
@@ -43,11 +46,43 @@ but this unsafety must be explicitly declared and thus dangerous behavior can be
 isolated.
 
 %maybe list companies using Rust? mozilla, amazon
+
 While \rust is not the only language that provides this level of safety, it is
 the only language that provides this level of safety with little to no overhead,
 making it potentially as fast a \c and \cpp while avoiding many of the
-pitfalls of the two languages. 
-% source and table http://benchmarksgame.alioth.debian.org/u64q/rust.html
+pitfalls of the two languages.
+
+Important in that last statement was the fact that \rust has the \textit{potential}
+to be as fast as \c, and while it performs in the same order of magnitude, its not
+quite as fast in many cases, as seen in Figure \ref{fig:bench}.
+A potential reason this is that \rust doesn't have the compiler maturity \c has.
+%citations?
+There are plenty of potential \rust specific optimizations that have yet to be
+implemented, and 
+
+\begin{figure}
+  \centering
+\begin{tabular}{r|c|c}
+  Test&Rust&C\\
+  k-nucleotide&5.30&6.46\\
+  pidigits&1.75&1.73\\
+  spectral-norm&2.01&1.98\\
+  reverse-complement&0.45&0.42\\
+  fasta&1.49&1.32\\
+  mandelbrot&1.90&1.64\\
+  n-body&13.08&9.56\\
+  regex-redux&3.28&1.89\\
+  binary-trees&4.27&2.39\\
+\end{tabular}
+  \caption{Rust vs C Microbenchmarks}
+  These numbers are taken from a series of microbenchmarks. It attempts to only
+  test idiomatic usages of the languages, and thus can be viewed as a comparison
+  between how fast languages perform when used naturally.\cite{bench}
+  \label{fig:bench}
+\end{figure}
+
+% source and table http://benchmarksgame.alioth.debian.org/u64q/rust.htm
+% l
 
 
 
