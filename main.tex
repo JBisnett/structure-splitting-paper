@@ -4,11 +4,10 @@
 \usepackage{listing}
 \usepackage{minted}
 \usepackage{xspace}
-
-\newcommand{\rust}[1]{\mintinline{rust}{#1}}
-
 \newcommand{\rustname}{{\texttt Rust}}
 \def \rust {\rustname{}\xspace}
+\newcommand{\rustcname}{{\texttt rustc}}
+\def \rustc {\rustcname{}\xspace}
 \newcommand{\cname}{{\texttt{C}}}
 \def \c {\cname{}\xspace}
 \newcommand{\cppname}{{\texttt{C++}}}
@@ -25,8 +24,6 @@
 \author{Jacob Bisnett}
 \maketitle
 
-\bibliography{main}{}
-\bibliographystyle{acm}
 \section{Introduction}
 \label{sec:intro}
 
@@ -52,18 +49,6 @@ the only language that provides this level of safety with little to no overhead,
 making it potentially as fast a \c and \cpp while avoiding many of the
 pitfalls of the two languages.
 
-Important in that last statement was the fact that \rust has the \textit{potential}
-to be as fast as \c, and while it performs in the same order of magnitude, its not
-quite as fast in many cases, as seen in Figure \ref{fig:bench}.
-A potential reason this is that \rust doesn't have the compiler maturity \c has.
-%citations?
-
-%possibly talk more about this?
-The exciting part about the future of \rust is not just that it will eventually
-reach parity with \c, but that it could eventually go beyond it. There are
-already a few \rust specific optimizations that \c and \cpp cannot do, but that
-set is far too small to provide significant gains as of yet.
-
 \begin{figure}
   \centering
 \begin{tabular}{r|c|c}
@@ -85,10 +70,43 @@ set is far too small to provide significant gains as of yet.
   \label{fig:bench}
 \end{figure}
 
-% source and table http://benchmarksgame.alioth.debian.org/u64q/rust.htm
-% l
+Important in that last statement was the fact that \rust has the \textit{potential}
+to be as fast as \c, and while it performs in the same order of magnitude, its not
+quite as fast in many cases, as seen in Figure \ref{fig:bench}.
+A potential reason this is that \rust doesn't have the compiler maturity \c has.
+%citations?
 
+%possibly talk more about this?
+The exciting part about the future of \rust is not just that it will eventually
+reach parity with \c, but that it could eventually go beyond it. There are
+already a few \rust specific optimizations that \c and \cpp cannot do, but that
+set is far too small to provide significant gains as of yet.
 
+% FIXME: This may not be true
+% However, \rust's newness does have a benefit; it doesn't have a standard yet.
+% \rust's lack of a standard means that current compiler writers can be more
+% experimental with their compilation passes and still expect them to end up in a
+% production compiler.
+
+One significant addition, an addition which is the primary subject of this
+paper, would be to allow for the primary \rust compiler, \rustc, to split
+structures in ways that maximize cache performance through access locality.
+
+Most modern caches have cache lines that are 64 bytes long. Since accesses from
+memory are so expensive it is important that as much useful data is in that 64
+bytes as possible. When iterating over some array of integers or floating point
+numbers each memory access will result in cache lines that contain mostly
+interesting data. However, when iterating over some array of structures,
+the mostly useful only
+if every field of said structure is accessed at the same time. If only part of
+the structure is accessed then the remaining fields are just taking up space in
+the cache.
+
+A solution to this problem is splitting the structure into several component
+parts. Thus, assuming the structure is split such that fields that are accessed
+together are together, cache performance should improve. 
+
+%should probably explain how structure splitting works in detail
 
 \paragraph{What is structure splitting}
 % cite structure splitting paper.
@@ -306,5 +324,6 @@ when it is stored in a ``dumb'' way, that doesn't semantically depend on the
 contents of the object. This allows for potentially better cache behavior in
 stuff such as HashMaps.
 
-
+\bibliography{main}{}
+\bibliographystyle{acm}
 \end{document}
