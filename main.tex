@@ -2,14 +2,21 @@
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage{listing}
-
+\usepackage{minted}
+\usepackage{xspace}
 
 \newcommand{\rust}[1]{\mintinline{rust}{#1}}
 
-\newcommand{\rustname}{{\small \em Rust}}
-\def\rust{\rustname}
-\newcommand{\mirname}{{\small \em MIR}}
-\def\mir{\mirname}
+\newcommand{\rustname}{{\texttt Rust}}
+\def \rust {\rustname{}\xspace}
+\newcommand{\cname}{{\texttt{C}}}
+\def \c {\cname{}\xspace}
+\newcommand{\cppname}{{\texttt{C++}}}
+\def \cpp {\cppname{}\xspace}
+\newcommand{\mirname}{{\texttt MIR}}
+\def \mir {\mirname{}\xspace}
+\newcommand{\mlname}{{\texttt ML}}
+\def \ml {\mlname{}\xspace}
 
 \begin{document}
 \title{Locality Optimizing Compiler Transforms in Rust}
@@ -19,7 +26,30 @@
 \section{Introduction}
 \label{sec:intro}
 
-Something about memory wall, scientific computing, research. Computers are slow...
+\paragraph{What is Rust}
+% I don't want to talk about Rust forever,but if I need to say more I will
+The programming language \rust is fairly new, but already gained a considerable
+following due to its placement as a safe and easy to use alternative to \c and
+\cpp. \rust's primary advantage is its robust compile time checks and type
+system. Among many of these are:
+preventing two mutable references to an object from existing at the same time, 
+statically determining when to free objects without reference counting or
+garbage collection,
+and not allowing references to outlive their objects.
+Taken all together, \rust helps the user avoid data races and memory safety
+errors by preventing programs that could contain them from compiling.
+\rust does allow users to circumvent these rules with ``unsafe'' code,
+but this unsafety must be explicitly declared and thus dangerous behavior can be
+isolated.
+
+%maybe list companies using Rust? mozilla, amazon
+While \rust is not the only language that provides this level of safety, it is
+the only language that provides this level of safety with little to no overhead,
+making it potentially as fast a \c and \cpp while avoiding many of the
+pitfalls of the two languages. 
+% source and table http://benchmarksgame.alioth.debian.org/u64q/rust.html
+
+
 
 \paragraph{What is structure splitting}
 % cite structure splitting paper.
