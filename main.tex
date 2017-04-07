@@ -14,9 +14,17 @@
 \def \cpp {\cppname{}\xspace}
 \newcommand{\mirname}{{\texttt MIR}}
 \def \mir {\mirname{}\xspace}
+\newcommand{\hirname}{{\texttt HIR}}
+\def \hir {\hirname{}\xspace}
+\newcommand{\llvmname}{{\texttt LLVM}}
+\def \llvm {\llvmname{}\xspace}
+\newcommand{\llvmirname}{{\texttt LLVMIR}}
+\def \llvmir {\llvmirname{}\xspace}
 \newcommand{\mlname}{{\texttt ML}}
 \def \ml {\mlname{}\xspace}
 
+\newcommand{\vecname}{{\texttt Vec}}
+\def \vec {\vecname{}\xspace}
 
 
 \begin{document}
@@ -27,7 +35,6 @@
 \section{Introduction}
 \label{sec:intro}
 
-% I don't want to talk about Rust forever,but if I need to say more I will
 The programming language \rust is fairly new, but already gained a considerable
 following due to its placement as a safe and easy to use alternative to \c and
 \cpp. \rust's primary advantage is its robust compile time checks and type
@@ -36,6 +43,7 @@ preventing two mutable references to an object from existing at the same time,
 statically determining when to free objects without reference counting or
 garbage collection,
 and not allowing references to outlive their objects.
+
 Taken all together, \rust helps the user avoid data races and memory safety
 errors by preventing programs that could contain them from compiling.
 \rust does allow users to circumvent these rules with ``unsafe'' code,
@@ -45,8 +53,8 @@ isolated.
 %maybe list companies using Rust? mozilla, amazon
 
 While \rust is not the only language that provides this level of safety, it is
-the only language that provides this level of safety with little to no overhead,
-making it potentially as fast a \c and \cpp while avoiding many of the
+the only popular language that provides this level of safety with little to no overhead,
+making it potentially as fast as \c and \cpp while avoiding many of the
 pitfalls of the two languages.
 
 \begin{figure}
@@ -63,10 +71,11 @@ pitfalls of the two languages.
   regex-redux&3.28&1.89\\
   binary-trees&4.27&2.39\\
 \end{tabular}
-  \caption{Rust vs C Microbenchmarks}
-  These numbers are taken from a series of microbenchmarks. It attempts to only
+
+  These numbers are taken from a series of microbenchmarks that attempt to 
   test idiomatic usages of the languages, and thus can be viewed as a comparison
   between how fast languages perform when used naturally.\cite{bench}
+  \caption{Rust vs C Microbenchmarks}
   \label{fig:bench}
 \end{figure}
 
@@ -109,66 +118,107 @@ information can fit on each line.
 
 Performing this optimization, however, requires some work. Firstly one
 needs to decide where to split the structure, which fields should go in
-each substructure. This is not a trivial problem, but thankfully a
+each substructure. This is not a trivial problem, but thankfully a decent
+solution has been found...
+%TODO: should explain how structure splitting works in detail
 
-%should probably explain how structure splitting works in detail
+\subsection{\rustc}
+\label{sec:rustc}
 
-\paragraph{What is structure splitting}
-% cite structure splitting paper.
+\rustc is effectively a series of conversions from
+\rust code to various internal representations and finally into machine code.
+First is tokenizes and converts to an \texttt{AST}, then converts that into a
+second \texttt{AST}, called \hir. Before April of 2016, when \mir was created,
+\hir was the only
+internal representation in which serious semantic analysis was performed, which
+is likely part of the reason why very little \rust specific optimizations had
+been attempted, since \texttt{AST}'s are typically not suited for serious
+optimization work. Instead, optimizations were delegated to \llvmir, which \hir
+was translated into. 
+%rust
 
-\paragraph{How does structure splitting help}
-General improvements
+\subsubsection{MIR}
+\mir is fairly new; it was released in April 2016\cite{mirintro}. It acts as a
+intermediary between the second of \rust's AST representations, known as \hir,
+and \llvmir.
 
-\paragraph{What solutions to structure splitting exist currently}
-Ideally want a few more example here
+\mir is a fairly standard intermediate representation. It represents functions
+as a set of basic blocks. Basic blocks are composed of a series of statements
+and end in some sort of terminator, of which there are several types. Important
+to know is that function calls can only be made as part of a terminator. This is
+so it can be known statically that every statement of a basic block will
+execute\footnote{This isn't strictly true since inline assembly is evaluated as
+  a statement, but inline assembly can only be used during unsafe blocks
+  anyways, so its not usually relevant}.
 
-\paragraph{How do they fail?}
-Most of the time either the languages they use are not "safe" enough, ie have pointer arithmetic. 
-%was there structure splitting done in Fortran
-
-\paragraph{What does my solution do differently}
-
-One of the major problems with
-structure splitting is that most languages in which it would be beneficial to
-implement it in have very weak safety guarantees, to the point that any
-structure splitting approach would have an unacceptable effect on semantics, and
-thus implementing structure splitting automatically would be a bad idea.
-
-My solution doesn't have this issue because, since it's done in Rust unsafe behavior is very limited.
-
-\subsection{Why Rust}
-%https://tonyarcieri.com/it-s-time-for-a-memory-safety-intervention
-
-\subsection{MIR}
-%introducing mir: https://blog.rust-lang.org/2016/04/19/MIR.html
-%mir rfc: https://github.com/rust-lang/rfcs/blob/master/text/1211-mir.md 
-
-\section{Goals}
-\label{sec:goal}
-
-\begin{enumerate}
-\item Opt-in
-\item Semantically equivalent
-
-\end{enumerate}
 
 \section{Structure Splitting in Rust}
 
-My approach to solving this problem was a series of compiler passes that, at a high level:
-split Rust structs into some number of sub structures, modify function signature to accomidate this change,
-and make edits to the \rust intermediate representation, called \mir, in order 
-to actually perform the modifications.
+% One of the major problems with
+% structure splitting is that most languages in which it would be beneficial to
+% implement it in have very weak safety guarantees, to the point that any
+% structure splitting approach would have an unacceptable effect on semantics, and
+% thus implementing structure splitting automatically would be a bad idea.
+
+% My solution doesn't have this issue because, since it's done in Rust unsafe behavior is very limited.
+
+% My approach to solving this problem was to approach the challenge of structure
+% splitting as more of a library then a true compiler pass. This is for two
+% primary reasons. One, while \rust doesn't specifically say that structures can't
+% be non-contiguous, but that is likely only because \rust doesn't have a standard
+% yet. The only semi-official documentation on struct memory layouts for \rust, a
+% short page in the \rust book on guidelines for unsafe \rust, doesn't even mention the possibility.
+% Its hard to imagine that the casual user would accept it automatically then.
+
+
+% My approach to solving this problem was a series of compiler passes that, at a high level:
+% split Rust structs into some number of sub structures, modify function signature to accomidate this change,
+% and make edits to the \rust intermediate representation, called \mir, in order 
+% to actually perform the modifications.
+
+
+
 
 \subsection{Structure Splitting}
-Splitting \rust structs is the simplest part of the process. I made the decision to let the user decide
-on how to split the struct. This is because I did not think that explicitly including automatic control would 
-be very beneficial. This was for three main reasons. 
+
+\begin{figure*}
+\begin{minted}{rust}
+//This annotation...
+#[affinity_groups(a = 1, b = 2, c = 1)]
+struct S {
+  pub a: usize,
+  pub b: usize,
+  pub c: usize,
+}
+
+//...results in the following structures
+struct S1 {
+  pub a: usize,
+  pub c: usize,
+}
+struct S2 {
+  pub b: usize,
+}
+\end{minted}
+  \caption{Structure Splitting as a macro}
+  \label{fig:split}
+\end{figure*}
+Splitting \rust structures is the simplest part of the process. It is currently
+implemented as part of the \rust macro system, where the user of my library
+would add an annotation, as in Figure \ref{fig:split}, which generates a number
+of smaller structures, each of which contains some subset of it's parent's fields.
+
+Currently this means
+that users would need to specify manually how the split the structure. While an
+automated solution is of course possible, it is important for a few reasons that
+the process be manual, at least at the moment. 
 
 Firstly it was mandatory that the strategy used for structure splitting be modifiable by the user.
 Since the structure splitting operation is so global and such a potential performance improvement,
 some small change could end up resulting in massive performance gains or losses. Since it is impossible
 to come up with a $100\%$ correct automated strategy, allowing a manual override is important, or else
-user could potentially prevented from making important changes to their code since it could break the optimization.
+user could potentially prevented from making changes to their code
+since it could break the optimization.
 
 Secondly, deciding how to split a structure is already a solved problem,
 %cite structure splitting
@@ -177,39 +227,50 @@ intelligently reason about there program and split their structure how it makes 
 let them build an already existing tracing solution into their build system, and thus get the advantage
 of deciding when and where to spend the computation time.
 
-Thirdly, it is important that structure splitting be an ``opt-in" process. While \rust is by default
-a memory safe language, \rust has an unsafety system that code allows for the same pointer arithmetic 
-issues that \texttt{C} and other unsafe languages have. In \rust this unsafe code must be explicitly
-declared, but exactly what unsafe code can do has yet to be fully defined. Thus forcing the user to explicitly 
-turn structure splitting on, as well as reasoning about what it could mean for their program, is important.
+Thirdly, it is important that structure splitting be an ``opt-in" process.
+While \rust is by default a memory safe language, \rust has an
+unsafety system in which memory layout of structures could theoretically matter.
+This is less of a problem since usually when reasoning about structure layouts
+compiler directive are used to prevent the structure from having strange
+layouts, but having an explicit action to activate structure
+splitting is important for the default case. 
 
-\begin{enumerate}
-\item Macros that split the struct
-\item Change all arguments to functions and return values from Struct $\rightarrow$ (Struct1, Struct2, ...)
-\item Extract the components of the tuple 
-\item Change projections (struct.a) to their corresponding value (struct1.a)
-\item Change wholesale struct assignments to assignments of the pieces 
+%TODO: more here
 
-struct = a;
+\subsection{\mir modification}
 
-To be
+The rest of my work is the creation of a series of \mir passes that use the
+sub-structures defined by the macro system in order to automatically switch
+between 
 
-struct1 = a1;
-struct2 = a2;
 
-Split structs then exist in three types
+% \begin{enumerate}
+% \item Macros that split the struct
+% \item Change all arguments to functions and return values from Struct $\rightarrow$ (Struct1, Struct2, ...)
+% \item Extract the components of the tuple 
+% \item Change projections (struct.a) to their corresponding value (struct1.a)
+% \item Change wholesale struct assignments to assignments of the pieces 
 
-Need to handle function signatures properly
+% struct = a;
 
-\end{enumerate}
+% To be
 
-%poor phrasing, but need to eventually say this stuff somewhere.
-There are multiple ways in which structs are represented in the MIR. 
-\begin{enumerate}
-\item Completely seperate: Not even part of the same tuple
-\item Tupled: used for function args in the same crate
-\item Fully reformed: used for passing function args to a different crate. (might change, might not even implement)
-\end{enumerate}
+% struct1 = a1;
+% struct2 = a2;
+
+% Split structs then exist in three types
+
+% Need to handle function signatures properly
+
+% \end{enumerate}
+
+% %poor phrasing, but need to eventually say this stuff somewhere.
+% There are multiple ways in which structs are represented in the MIR. 
+% \begin{enumerate}
+% \item Completely seperate: Not even part of the same tuple
+% \item Tupled: used for function args in the same crate
+% \item Fully reformed: used for passing function args to a different crate. (might change, might not even implement)
+% \end{enumerate}
 
 \section{Discussion}
 \label{sec:discuss}
@@ -222,40 +283,41 @@ optimizations in that specific case without the usual run time overhead typical 
 work, there is considerably more work to be done until I would consider this
 a project that should be usable by the average user.
 
-\begin{figure*}
- \begin{minted}[autogobble]{rust}
-    struct Mir {
-        basic_blocks: Vec<BasicBlockData>,
-        // ...
-    }
+% \begin{figure*}
+%  \begin{minted}[autogobble]{rust}
+%     struct Mir {
+%         basic_blocks: Vec<BasicBlockData>,
+%         // ...
+%     }
 
-    struct BasicBlockData {
-        statements: Vec<Statement>,
-        terminator: Terminator,
-        // ...
-    }
+%     struct BasicBlockData {
+%         statements: Vec<Statement>,
+%         terminator: Terminator,
+%         // ...
+%     }
 
-    struct Statement {
-        lvalue: Lvalue,
-        rvalue: Rvalue
-    }
+%     struct Statement {
+%         lvalue: Lvalue,
+%         rvalue: Rvalue
+%     }
 
-    enum Terminator {
-        Goto { target: BasicBlock },
-        If {
-            cond: Operand,
-            targets: [BasicBlock; 2]
-        },
-        // ...
-    }
-\end{minted} 
-  \caption{Vec Splitting}
-  \label{fig:vec-split}
-\end{figure*}
+%     enum Terminator {
+%         Goto { target: BasicBlock },
+%         If {
+%             cond: Operand,
+%             targets: [BasicBlock; 2]
+%         },
+%         // ...
+%     }
+% \end{minted} 
+%   \caption{Vec Splitting}
+%   \label{fig:vec-split}
+% \end{figure*}
 
 The first, and most important, requirement would be to allow for the splitting
 of certain types of user defined structures. The first, and most obvious,
-benefit for this would be for allowing Vec, to be split as in Figure
+benefit for this would be for splitting various containers, the most obvious
+being \vec. \v[autogobble]{rust}ec is the default \rust resizable array class, analagous to std::vector
 
 \section{Issues}
 
@@ -275,59 +337,59 @@ good way of dealing with unsafe code. Unsafe code allows for raw pointer
 arithmetic, which breaks structure splitting. Rust does have the benefit that
 unsafe code must be contained in explicitly declared code blocks.
 
-\subsection{Rust Culture}
-\label{sec:culture}
+% \subsection{Rust Culture}
+% \label{sec:culture}
 
-Rust, as opposed to one of it's parent language's \texttt{Haskell}, has no good
-formal specification. The specification for \mir are practically non-existent. %https://github.com/rust-specification/english-specification
-The closest thing there is are an RFC proposing \mir, and a blog post announcing
-it, neither of which specify exactly what it can do, and both of which are now
-out of date with the current implementation .
+% Rust, as opposed to one of it's parent language's \texttt{Haskell}, has no good
+% formal specification. The specification for \mir are practically non-existent. %https://github.com/rust-specification/english-specification
+% The closest thing there is are an RFC proposing \mir, and a blog post announcing
+% it, neither of which specify exactly what it can do, and both of which are now
+% out of date with the current implementation .
 
-\section{Notes}
-\label{sec:remove}
+% \section{Notes}
+% \label{sec:remove}
 
-\subsection{Justification}
-\label{sec:just}
+% \subsection{Justification}
+% \label{sec:just}
 
-\paragraph{Premonomorphization} Helpful for several reasons
-\begin{enumerate}
-\item Could lower compilation time by not having to regenerate code
-\item  Easier to process in our particular case
-\end{enumerate}
+% \paragraph{Premonomorphization} Helpful for several reasons
+% \begin{enumerate}
+% \item Could lower compilation time by not having to regenerate code
+% \item  Easier to process in our particular case
+% \end{enumerate}
 
-\paragraph{Shorter Compilation Times} One of the biggest sticking points for
-Rust is that compilation times are quite long, in part due to LLVM taking
-significant time in the compilation process (citation needed). Rust's safety
-could potentially allow for excellent incremental compilation down to the basic
-block level (citation needed). Additionally, LLVM takes a significant part of
-Rust compilation times, and moving some optimization up from LLVM to Rust means
-that other, faster backends can become for feasible. LLVM is also not
-necissarily the best at compiling for certain architectures, such as WebASM.
-With Rust getting WebASM as an alternate backend at some point, developing Rust
-specific optimizations could be good.
+% \paragraph{Shorter Compilation Times} One of the biggest sticking points for
+% Rust is that compilation times are quite long, in part due to LLVM taking
+% significant time in the compilation process (citation needed). Rust's safety
+% could potentially allow for excellent incremental compilation down to the basic
+% block level (citation needed). Additionally, LLVM takes a significant part of
+% Rust compilation times, and moving some optimization up from LLVM to Rust means
+% that other, faster backends can become for feasible. LLVM is also not
+% necissarily the best at compiling for certain architectures, such as WebASM.
+% With Rust getting WebASM as an alternate backend at some point, developing Rust
+% specific optimizations could be good.
 
-%https://github.com/rust-lang/rust/issues/33205
+% %https://github.com/rust-lang/rust/issues/33205
 
-\subsection{Rvalue Type induction}
-Need to update the \texttt{AggregateKind::Array} so that it references the right Ty
+% \subsection{Rvalue Type induction}
+% Need to update the \texttt{AggregateKind::Array} so that it references the right Ty
 
-\section{Challenges}
-\label{sec:annoying}
+% \section{Challenges}
+% \label{sec:annoying}
 
-\subsection{Deriving}
-Most seem to be ok, but some combinations of derivations make things really
-annoying, ie \texttt{Copy} and \texttt{Clone}.
+% \subsection{Deriving}
+% Most seem to be ok, but some combinations of derivations make things really
+% annoying, ie \texttt{Copy} and \texttt{Clone}.
 
-\subsection{Polymorphism}
+% \subsection{Polymorphism}
 
-\subsection{User defined data structures}
-Arrays are fine, but are difficult to use on their own. You really need to
-handle Vectors, and Vectors are... complecated. Basically we needed to define a
-trait, and users need to implement that trait on objects when it is safe to, ie
-when it is stored in a ``dumb'' way, that doesn't semantically depend on the
-contents of the object. This allows for potentially better cache behavior in
-stuff such as HashMaps.
+% \subsection{User defined data structures}
+% Arrays are fine, but are difficult to use on their own. You really need to
+% handle Vectors, and Vectors are... complecated. Basically we needed to define a
+% trait, and users need to implement that trait on objects when it is safe to, ie
+% when it is stored in a ``dumb'' way, that doesn't semantically depend on the
+% contents of the object. This allows for potentially better cache behavior in
+% stuff such as HashMaps.
 
 \bibliography{main}{}
 \bibliographystyle{acm}
