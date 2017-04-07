@@ -122,7 +122,7 @@ needs to decide where to split the structure, which fields should go in
 each substructure. This is not a trivial problem, but thankfully a decent
 solution has been found...
 
-\todo[inline, color = green!]{should explain how structure splitting works in detail}
+\todo[inline]{should explain how structure splitting works in detail}
 
 \subsection{\rustc}
 \label{sec:rustc}
@@ -153,6 +153,7 @@ so it can be known statically that every statement of a basic block will
 execute\footnote{This isn't strictly true since inline assembly is evaluated as
   a statement, but inline assembly can only be used during unsafe blocks
   anyways, so its not usually relevant}.
+\todo[inline]{More here}
 
 \section{Structure Splitting in Rust}
 
@@ -245,13 +246,13 @@ As long as we do not split a tuple with more then one structure, tuples are
 also the same. Why we can't split multiple structures in a tuple is discussed in
 Section \ref{sec:limits}.
 
-\todo{structures}
 Structure are very easy in the case that the structure type is the split
 structure, the structure is split as it is. The trouble comes when the structure
 is not something that is splitable, but one of its generic parameters is. In
 this case, 
+\todo[inline]{Finish this}
 
-\todo{}
+\todo[inline]{Talk about functions}
 
 \subsection{Limitations}
 \label{sec:limits}
