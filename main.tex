@@ -246,10 +246,10 @@ As long as we do not split a tuple with more then one structure, tuples are
 also the same. Why we can't split multiple structures in a tuple is discussed in
 Section \ref{sec:limits}.
 
-Structure are very easy in the case that the structure type is the split
-structure, the structure is split as it is. The trouble comes when the structure
-is not something that is splitable, but one of its generic parameters is. In
-this case, 
+Structures are very easy in the case that the structure is exactly what we are
+looking for. Where things get tricky is when some other structure is
+parameterized by the structure we are interested in. 
+
 \todo[inline]{Finish this}
 
 \todo[inline]{Talk about functions}
@@ -330,6 +330,7 @@ standard. As such, it is difficult to be certain that the compiler pass will
 have no semantic effect on the code. It works within the current Rust
 implementation, but manual testing can only be so successful.
 % possibly cite the commit hash?
+
 
 \subsection{Unsafety}
 \label{sec:unsafe}
