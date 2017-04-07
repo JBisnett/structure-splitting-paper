@@ -27,6 +27,8 @@
 \newcommand{\vecname}{{\texttt{Vec}}}
 \def \vec {\vecname{}\xspace}
 
+\newcommand{\teststructname}{{\texttt{S}}}
+\def \S {\teststructname{}\xspace}
 
 \begin{document}
 \title{Locality Optimizing Compiler Transforms in Rust}
@@ -226,13 +228,40 @@ implements the structure splitting. While the actual structure splitting should
 be in some ways manual, it is vital that the actual splitting logic is
 completely automatic, while introducing as little run time cost as possible.
 
-Firstly, my library iterates through all declarations of local variables and
-sees if any of them are splitable. If they are splitable, we duplicate the
-declaration, replacing the type in each duplicate with a
-substructure.\todo{Better description of what happens when there are nested types}
+I will explain the process by first assuming that only one structure is getting
+split\footnote{Why I limit to one structure is discussed more in Section
+\ref{sec:limits}}. I'll call this structure \S. Let us also assume \S has \texttt{n}
+fields $\{\texttt{f}_1, \texttt{f}_2, ... \texttt{f}_n\}$
+divided into \texttt{g} groups.
+Each group then gets their own structure, named \texttt{Sg}.
+In order to actually use our split structure we iterate through the set
+of variable declarations in each function and determine individually if the
+declaration can be split into $g$ declarations. A simple illustrative example is
+in Figure \ref{fig:localdeclbefore}
 
-Whether something is splitable or not is
-sometimes a difficult decision to make, however.
+\begin{figure*}
+  \begin{minipage}[t]{0.5\linewidth}
+\begin{minted}{rust}
+// This declaration...
+let _1 = S;
+\end{minted}
+  \end{minipage}
+  \begin{minipage}[t]{0.5\linewidth}
+\begin{minted}{rust}
+// ... turns into this
+let _1 = S1;
+let _2 = S2;
+let _3 = S3;
+\end{minted}
+  \end{minipage}
+  
+  \caption{Simple Local Declarations Splitting $g = 3$}
+  \label{fig:localdeclbefore}
+\end{figure*}
+
+\todo[inline]{Need to fix this paragraph}
+Of course deciding whether or not to split a declaration is not a easy as just
+checking if it is exactly what we want.  
 There are, at time of writing, 22 different kinds of types a variable declaration
 can have. For the purposes of this paper, these types can be separated into seven
 groups; primitive, internal, reference, arrays, tuples, structures,
