@@ -4,26 +4,27 @@
 \usepackage{listing}
 \usepackage{minted}
 \usepackage{xspace}
-\newcommand{\rustname}{{\texttt Rust}}
+\usepackage[colorinlistoftodos]{todonotes}
+\newcommand{\rustname}{{\texttt{Rust}}}
 \def \rust {\rustname{}\xspace}
-\newcommand{\rustcname}{{\texttt rustc}}
+\newcommand{\rustcname}{{\texttt{rustc}}}
 \def \rustc {\rustcname{}\xspace}
 \newcommand{\cname}{{\texttt{C}}}
 \def \c {\cname{}\xspace}
 \newcommand{\cppname}{{\texttt{C++}}}
 \def \cpp {\cppname{}\xspace}
-\newcommand{\mirname}{{\texttt MIR}}
+\newcommand{\mirname}{{\texttt{MIR}}}
 \def \mir {\mirname{}\xspace}
-\newcommand{\hirname}{{\texttt HIR}}
+\newcommand{\hirname}{{\texttt{HIR}}}
 \def \hir {\hirname{}\xspace}
-\newcommand{\llvmname}{{\texttt LLVM}}
+\newcommand{\llvmname}{{\texttt{LLVM}}}
 \def \llvm {\llvmname{}\xspace}
-\newcommand{\llvmirname}{{\texttt LLVMIR}}
+\newcommand{\llvmirname}{{\texttt{LLVMIR}}}
 \def \llvmir {\llvmirname{}\xspace}
-\newcommand{\mlname}{{\texttt ML}}
+\newcommand{\mlname}{{\texttt{ML}}}
 \def \ml {\mlname{}\xspace}
 
-\newcommand{\vecname}{{\texttt Vec}}
+\newcommand{\vecname}{{\texttt{Vec}}}
 \def \vec {\vecname{}\xspace}
 
 
@@ -120,7 +121,8 @@ Performing this optimization, however, requires some work. Firstly one
 needs to decide where to split the structure, which fields should go in
 each substructure. This is not a trivial problem, but thankfully a decent
 solution has been found...
-%TODO: should explain how structure splitting works in detail
+
+\todo[inline, color = green!]{should explain how structure splitting works in detail}
 
 \subsection{\rustc}
 \label{sec:rustc}
@@ -137,11 +139,12 @@ optimization work. Instead, optimizations were delegated to \llvmir, which \hir
 was translated into. 
 %rust
 
-\subsubsection{MIR}
+\subsubsection{\mir}
 \mir is fairly new; it was released in April 2016\cite{mirintro}. It acts as a
 intermediary between the second of \rust's AST representations, known as \hir,
 and \llvmir.
 
+%this is sort of relevant since it saves on some work I discuss later. Might remove
 \mir is a fairly standard intermediate representation. It represents functions
 as a set of basic blocks. Basic blocks are composed of a series of statements
 and end in some sort of terminator, of which there are several types. Important
@@ -151,33 +154,12 @@ execute\footnote{This isn't strictly true since inline assembly is evaluated as
   a statement, but inline assembly can only be used during unsafe blocks
   anyways, so its not usually relevant}.
 
-
 \section{Structure Splitting in Rust}
 
-% One of the major problems with
-% structure splitting is that most languages in which it would be beneficial to
-% implement it in have very weak safety guarantees, to the point that any
-% structure splitting approach would have an unacceptable effect on semantics, and
-% thus implementing structure splitting automatically would be a bad idea.
-
-% My solution doesn't have this issue because, since it's done in Rust unsafe behavior is very limited.
-
-% My approach to solving this problem was to approach the challenge of structure
-% splitting as more of a library then a true compiler pass. This is for two
-% primary reasons. One, while \rust doesn't specifically say that structures can't
-% be non-contiguous, but that is likely only because \rust doesn't have a standard
-% yet. The only semi-official documentation on struct memory layouts for \rust, a
-% short page in the \rust book on guidelines for unsafe \rust, doesn't even mention the possibility.
-% Its hard to imagine that the casual user would accept it automatically then.
-
-
-% My approach to solving this problem was a series of compiler passes that, at a high level:
-% split Rust structs into some number of sub structures, modify function signature to accomidate this change,
-% and make edits to the \rust intermediate representation, called \mir, in order 
-% to actually perform the modifications.
-
-
-
+My approach to bring structure splitting into \rust was to create a library
+containing a macro that performed the actual structure splitting, as well as a
+series of \mir passes that performs the changes necessary to use the resulting
+split structure.
 
 \subsection{Structure Splitting}
 
@@ -235,42 +217,53 @@ compiler directive are used to prevent the structure from having strange
 layouts, but having an explicit action to activate structure
 splitting is important for the default case. 
 
-%TODO: more here
-
+\todo[inline]{More here}
 \subsection{\mir modification}
 
-The rest of my work is the creation of a series of \mir passes that use the
-sub-structures defined by the macro system in order to automatically switch
-between 
+The majority of my work is a series of \mir passes that actually
+implements the structure splitting. While the actual structure splitting should
+be in some ways manual, it is vital that the actual splitting logic is
+completely automatic, while introducing as little run time cost as possible.
+
+Firstly, my library iterates through all declarations of local variables and
+sees if any of them are splitable. If they are splitable, we duplicate the
+declaration, replacing the type in each duplicate with a substructure.
+
+Whether something is splitable or not is
+sometimes a difficult decision to make, however.
+There are, at time of writing, 22 different kinds of types a variable declaration
+can have. For the purposes of this paper, these types can be separated into seven
+groups; primitive, internal, reference, arrays, tuples, structures,
+and functions.
+
+We can safely ignore primitive and internal types. References, and
+arrays are split by checking if they contain or refer a splitable structure and
+splitting if they do.
+
+\todo{explain this more}
+As long as we do not split more then one struct, tuples are also the same.
+
+\todo{structures}
+Structure are very easy in the case 
+
+\todo{}
+
+\subsection{Limitations}
+Currently my library does not support nesting split structures inside other structures.
+This is completely feasible, but requires some fairly extensive compiler
+modifications in order to work correctly. 
 
 
-% \begin{enumerate}
-% \item Macros that split the struct
-% \item Change all arguments to functions and return values from Struct $\rightarrow$ (Struct1, Struct2, ...)
-% \item Extract the components of the tuple 
-% \item Change projections (struct.a) to their corresponding value (struct1.a)
-% \item Change wholesale struct assignments to assignments of the pieces 
-
-% struct = a;
-
-% To be
-
-% struct1 = a1;
-% struct2 = a2;
-
-% Split structs then exist in three types
-
-% Need to handle function signatures properly
-
-% \end{enumerate}
-
-% %poor phrasing, but need to eventually say this stuff somewhere.
-% There are multiple ways in which structs are represented in the MIR. 
-% \begin{enumerate}
-% \item Completely seperate: Not even part of the same tuple
-% \item Tupled: used for function args in the same crate
-% \item Fully reformed: used for passing function args to a different crate. (might change, might not even implement)
-% \end{enumerate}
+\todo{rephrase}
+It also do not support splitting more than one structure at a time. This is
+partially because it made implementation easier and partially because doing so
+could result in some potentially very inefficient code. This is because
+splitting multiple structures in tuples could lead to some very, very
+inefficient results. Consider the case in which there are $n$ structures split
+into $m$ substructures each. If one of each structure was put in an tuple, then
+splitting the tuple completely would result in $n^m$\todo{Check this math} total tuples, which can lead
+to some serious run time costs, especially if the tuples are parameters to
+another type.
 
 \section{Discussion}
 \label{sec:discuss}
