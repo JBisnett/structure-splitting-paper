@@ -227,7 +227,8 @@ completely automatic, while introducing as little run time cost as possible.
 
 Firstly, my library iterates through all declarations of local variables and
 sees if any of them are splitable. If they are splitable, we duplicate the
-declaration, replacing the type in each duplicate with a substructure.
+declaration, replacing the type in each duplicate with a
+substructure.\todo{Better description of what happens when there are nested types}
 
 Whether something is splitable or not is
 sometimes a difficult decision to make, however.
@@ -237,18 +238,23 @@ groups; primitive, internal, reference, arrays, tuples, structures,
 and functions.
 
 We can safely ignore primitive and internal types. References, and
-arrays are split by checking if they contain or refer a splitable structure and
-splitting if they do.
+arrays are split by recursively checking their internal component and splitting
+based on that.
 
-\todo{explain this more}
-As long as we do not split more then one struct, tuples are also the same.
+As long as we do not split a tuple with more then one structure, tuples are
+also the same. Why we can't split multiple structures in a tuple is discussed in
+Section \ref{sec:limits}.
 
 \todo{structures}
-Structure are very easy in the case 
+Structure are very easy in the case that the structure type is the split
+structure, the structure is split as it is. The trouble comes when the structure
+is not something that is splitable, but one of its generic parameters is. In
+this case, 
 
 \todo{}
 
 \subsection{Limitations}
+\label{sec:limits}
 Currently my library does not support nesting split structures inside other structures.
 This is completely feasible, but requires some fairly extensive compiler
 modifications in order to work correctly. 
@@ -310,7 +316,10 @@ a project that should be usable by the average user.
 The first, and most important, requirement would be to allow for the splitting
 of certain types of user defined structures. The first, and most obvious,
 benefit for this would be for splitting various containers, the most obvious
-being \vec. \v[autogobble]{rust}ec is the default \rust resizable array class, analagous to std::vector
+being \vec. \vec is the default \rust resizable array class, analagous to \texttt{std::vector}
+
+\todo[inline]{Talk about applications on locks}
+\todo[inline]{Maybe talk about why not \llvm or \texttt{ghc}}
 
 \section{Issues}
 
@@ -329,6 +338,8 @@ Another major issue is that, because there is no language standard, there is no
 good way of dealing with unsafe code. Unsafe code allows for raw pointer
 arithmetic, which breaks structure splitting. Rust does have the benefit that
 unsafe code must be contained in explicitly declared code blocks.
+
+
 
 % \subsection{Rust Culture}
 % \label{sec:culture}
