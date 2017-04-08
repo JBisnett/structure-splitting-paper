@@ -243,15 +243,15 @@ in Figure \ref{fig:localdeclbefore}
   \begin{minipage}[t]{0.5\linewidth}
 \begin{minted}{rust}
 // This declaration...
-let _1 = S;
+let _1: S;
 \end{minted}
   \end{minipage}
   \begin{minipage}[t]{0.5\linewidth}
 \begin{minted}{rust}
 // ... turns into this
-let _1 = S1;
-let _2 = S2;
-let _3 = S3;
+let _1: S1;
+let _2: S2;
+let _3: S3;
 \end{minted}
   \end{minipage}
   
