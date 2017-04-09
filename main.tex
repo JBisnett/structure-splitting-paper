@@ -271,9 +271,9 @@ We can safely ignore primitive and internal types. References, and
 arrays are split by recursively checking their internal component and splitting
 based on that.
 
-As long as we do not split a tuple with more then one structure, tuples are
-also the same. Why we can't split multiple structures in a tuple is discussed in
-Section \ref{sec:limits}.
+% As long as we do not split a tuple with more then one structure, tuples are
+% also the same. Why we can't split multiple structures in a tuple is discussed in
+% Section \ref{sec:limits}.
 
 Structures are very easy in the case that the structure is exactly what we are
 looking for. Where things get tricky is when some other structure is
@@ -287,8 +287,14 @@ parameterized by the structure we are interested in.
 \label{sec:limits}
 Currently my library does not support nesting split structures inside other structures.
 This is completely feasible, but requires some fairly extensive compiler
-modifications in order to work correctly. 
+modifications in order to work correctly.
 
+It also doesn't support exporting split structures outside of the current crate.
+This is because the compiler cannot easily access code out of the crate, and
+thus cannot modify function definitions to accept the tuple of structures we
+pass in. This problem could be solved by a few methods, all of which require
+either significant compiler modification or the introduction of run
+time cost. 
 
 \todo{rephrase}
 It also do not support splitting more than one structure at a time. This is
@@ -300,6 +306,8 @@ into $m$ substructures each. If one of each structure was put in an tuple, then
 splitting the tuple completely would result in $n^m$\todo{Check this math} total tuples, which can lead
 to some serious run time costs, especially if the tuples are parameters to
 another type.
+
+A solution to this is to deconstruct tuples inside function definitions
 
 \section{Discussion}
 \label{sec:discuss}
