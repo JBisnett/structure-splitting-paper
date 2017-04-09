@@ -1,13 +1,13 @@
 \documentclass[12pt,oneside]{book}
-\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
 \usepackage{fancyhdr}           % For page number in the upper right
                                 % (required) and other running headers
                                 % (optional)
 \usepackage{setspace}           % For double-spacing (required)
 \usepackage{titlesec}           % For keeping section/\chapter titles
                                 % single-spaced
-\usepackage{etoolbox}           % For the flag determining if front matter
-                                % goes into the TOC
+
 \usepackage{blindtext}          % For generating dummy text in the sample
                                 % output, can be removed
 
@@ -45,10 +45,6 @@
 {\thesubsection}%
 {0.25in}%
 {}
-
-% Flag for whether to add front matter to TOC
-\newtoggle{fulltoc}
-\togglefalse{fulltoc} % Change to \toggletrue{fulltoc} to include front matter
 
 \usepackage{listing}
 \usepackage{minted}
