@@ -1,6 +1,55 @@
-\documentclass[12pt,final]{article}
-\usepackage[english]{babel}
-\usepackage[utf8]{inputenc}
+\documentclass[12pt,oneside]{book}
+\usepackage[T1]{fontenc}
+\usepackage{fancyhdr}           % For page number in the upper right
+                                % (required) and other running headers
+                                % (optional)
+\usepackage{setspace}           % For double-spacing (required)
+\usepackage{titlesec}           % For keeping section/\chapter titles
+                                % single-spaced
+\usepackage{etoolbox}           % For the flag determining if front matter
+                                % goes into the TOC
+\usepackage{blindtext}          % For generating dummy text in the sample
+                                % output, can be removed
+
+% Header height (to avoid fancyhdr error)
+\setlength{\headheight}{13.6pt}
+
+% Header formatting for regular pages
+\fancyhf{}
+\fancyhead[L]{\it\small\leftmark}
+\fancyhead[R]{\small\thepage}
+
+% Header formatting for \chapter title pages
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyhead[R]{\small\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+}
+
+% Formatting of \chapter and section titles: keep them single-spaced in the
+% midst of double-spaced text
+\titleformat{\chapter}[display]%
+{\bfseries\singlespacing\Large}%
+{Chapter~\thechapter}%
+{1em}%
+{\LARGE}
+
+\titleformat{\section}[hang]%
+{\bfseries\singlespacing\Large}%
+{\thesection}%
+{0.25in}%
+{}
+
+\titleformat{\subsection}[hang]%
+{\bfseries\singlespacing\large}%
+{\thesubsection}%
+{0.25in}%
+{}
+
+% Flag for whether to add front matter to TOC
+\newtoggle{fulltoc}
+\togglefalse{fulltoc} % Change to \toggletrue{fulltoc} to include front matter
+
 \usepackage{listing}
 \usepackage{minted}
 \usepackage{xspace}
@@ -34,9 +83,11 @@
 \title{Locality Optimizing Compiler Transforms in Rust}
 \author{Jacob Bisnett}
 \maketitle
-
-\section{Introduction}
+\pagestyle{fancy}
+\pagenumbering{roman}
+\chapter{Introduction}
 \label{sec:intro}
+\doublespacing
 
 The programming language \rust is fairly new, but already gained a considerable
 following due to its placement as a safe and easy to use alternative to \c and
@@ -126,7 +177,7 @@ solution has been found...
 
 \todo[inline]{should explain how structure splitting works in detail}
 
-\subsection{\rustc}
+\section{\rustc}
 \label{sec:rustc}
 
 \rustc is effectively a series of conversions from
@@ -141,7 +192,7 @@ optimization work. Instead, optimizations were delegated to \llvmir, which \hir
 was translated into. 
 %rust
 
-\subsubsection{\mir}
+\subsection{\mir}
 \mir is fairly new; it was released in April 2016\cite{mirintro}. It acts as a
 intermediary between the second of \rust's AST representations, known as \hir,
 and \llvmir.
@@ -156,7 +207,7 @@ execute\footnote{This isn't strictly true since inline assembly is evaluated as
   a statement, but inline assembly can only be used during unsafe blocks
   anyways, so its not usually relevant}.
 
-\section{Structure Splitting in Rust}
+\chapter{Structure Splitting in Rust}
 
 My contribution in this space is the creation of a platform for further
 research \rust structure splitting to build upon. On top of this platform I have
@@ -166,7 +217,7 @@ input on a few of a trickier decisions.
 
 \todo[inline]{This should probably be the focus of the paper}
 
-\subsection{Structure Splitting}
+\section{Structure Splitting}
 
 \begin{figure*}
 \begin{minted}{rust}
@@ -223,7 +274,7 @@ layouts, but having an explicit action to activate structure
 splitting is important for the default case. 
 
 \todo[inline]{More here}
-\subsection{\mir modification}
+\section{\mir modification}
 
 The majority of my work is a series of \mir passes that actually
 implements the structure splitting. While the actual structure splitting should
@@ -285,7 +336,7 @@ parameterized by the structure we are interested in.
 
 \todo[inline]{Talk about functions}
 
-\subsection{Limitations}
+\section{Limitations}
 \label{sec:limits}
 Currently my library does not support nesting split structures inside other structures.
 This is completely feasible, but requires some fairly extensive compiler
@@ -311,7 +362,7 @@ another type.
 
 A solution to this is to deconstruct tuples inside function definitions
 
-\section{Discussion}
+\chapter{Discussion}
 \label{sec:discuss}
 
 This project is very much more of a platform for further research then a
@@ -361,7 +412,7 @@ being \vec. \vec is the default \rust resizable array class, analagous to \textt
 \todo[inline]{Talk about applications on locks}
 \todo[inline]{Maybe talk about why not \llvm or \texttt{ghc}}
 
-\section{Issues}
+\chapter{Issues}
 
 While in common cases this approach works very well, there are a few issues with
 it, most of which resulting from the fact that Rust does not have a languages
@@ -371,7 +422,7 @@ implementation, but manual testing can only be so successful.
 % possibly cite the commit hash?
 
 
-\subsection{Unsafety}
+\section{Unsafety}
 \label{sec:unsafe}
 
 
@@ -382,7 +433,7 @@ unsafe code must be contained in explicitly declared code blocks.
 
 
 
-% \subsection{Rust Culture}
+% \section{Rust Culture}
 % \label{sec:culture}
 
 % Rust, as opposed to one of it's parent language's \texttt{Haskell}, has no good
@@ -391,10 +442,10 @@ unsafe code must be contained in explicitly declared code blocks.
 % it, neither of which specify exactly what it can do, and both of which are now
 % out of date with the current implementation .
 
-% \section{Notes}
+% \chapter{Notes}
 % \label{sec:remove}
 
-% \subsection{Justification}
+% \section{Justification}
 % \label{sec:just}
 
 % \paragraph{Premonomorphization} Helpful for several reasons
@@ -416,19 +467,19 @@ unsafe code must be contained in explicitly declared code blocks.
 
 % %https://github.com/rust-lang/rust/issues/33205
 
-% \subsection{Rvalue Type induction}
+% \section{Rvalue Type induction}
 % Need to update the \texttt{AggregateKind::Array} so that it references the right Ty
 
-% \section{Challenges}
+% \chapter{Challenges}
 % \label{sec:annoying}
 
-% \subsection{Deriving}
+% \section{Deriving}
 % Most seem to be ok, but some combinations of derivations make things really
 % annoying, ie \texttt{Copy} and \texttt{Clone}.
 
-% \subsection{Polymorphism}
+% \section{Polymorphism}
 
-% \subsection{User defined data structures}
+% \section{User defined data structures}
 % Arrays are fine, but are difficult to use on their own. You really need to
 % handle Vectors, and Vectors are... complecated. Basically we needed to define a
 % trait, and users need to implement that trait on objects when it is safe to, ie
@@ -439,3 +490,10 @@ unsafe code must be contained in explicitly declared code blocks.
 \bibliography{main}{}
 \bibliographystyle{acm}
 \end{document}
+%%% Local Variables:
+%%% coding: utf-8
+%%% mode: latex
+%%% TeX-engine: pdflatex
+%%% TeX-master: t
+%%% TeX-command-extra-options: "-shell-escape"
+%%% End:
