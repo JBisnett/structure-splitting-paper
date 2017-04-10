@@ -70,18 +70,17 @@
 \def \ml {\mlname{}\xspace}
 
 \newcommand{\vecname}{{\texttt{Vec}}}
-\def \vec {\vecname{}\xspace}
+\def \vec{\vecname{}\xspace}
 
-\newcommand{\teststructname}{{\texttt{S}}}
-\def \S {\teststructname{}\xspace}
 
 \begin{document}
-\title{Locality Optimizing Compiler Transforms in Rust}
+\title{Loca1lity Optimizing Compiler Transforms in Rust}
 \author{Jacob Bisnett}
 \maketitle
 \pagestyle{fancy}
-\pagenumbering{roman}
+\pagenumbering{arabic}
 \chapter{Introduction}
+\doublespacing
 \label{sec:intro}
 
 The programming language \rust is fairly new, but already gained a considerable
@@ -187,20 +186,25 @@ optimization work. Instead, optimizations were delegated to \llvmir, which \hir
 was translated into. 
 %rust
 
+\todo[inline]{More here}
+
 \subsection{\mir}
 \mir is fairly new; it was released in April 2016\cite{mirintro}. It acts as a
 intermediary between the second of \rust's AST representations, known as \hir,
 and \llvmir.
 
 %this is sort of relevant since it saves on some work I discuss later. Might remove
-\mir is a fairly standard intermediate representation. It represents functions
+\mir is a fairly standard intermediate representation. \mir represents functions, 
+or function-like units like static blocks and closures, as
 as a set of basic blocks. Basic blocks are composed of a series of statements
-and end in some sort of terminator, of which there are several types. Important
-to know is that function calls can only be made as part of a terminator. This is
+and end in some sort of terminator, of which there are several types. 
+Function calls can only be made as part of a terminator. This is
 so it can be known statically that every statement of a basic block will
 execute\footnote{This isn't strictly true since inline assembly is evaluated as
   a statement, but inline assembly can only be used during unsafe blocks
   anyways, so its not usually relevant}.
+  
+  \todo[inline]{More here}
 
 \chapter{Structure Splitting in Rust}
 
@@ -236,6 +240,8 @@ struct S2 {
   \caption{Structure Splitting as a macro}
   \label{fig:split}
 \end{figure*}
+
+\todo[inline]{This part needs work, should mention the whole platform thing.}
 Splitting \rust structures is the simplest part of the process. It is currently
 implemented as part of the \rust macro system, where the user of my library
 would add an annotation, as in Figure \ref{fig:split}, which generates a number
@@ -271,20 +277,18 @@ splitting is important for the default case.
 \todo[inline]{More here}
 \section{\mir modification}
 
+\todo[inline]{This also needs some work}
 The majority of my work is a series of \mir passes that actually
 implements the structure splitting. While the actual structure splitting should
 be in some ways manual, it is vital that the actual splitting logic is
 completely automatic, while introducing as little run time cost as possible.
 
-I will explain the process by first assuming that only one structure is getting
-split\footnote{Why I limit to one structure is discussed more in Section
-\ref{sec:limits}}. I'll call this structure \S. Let us also assume \S has \texttt{n}
-fields $\{\texttt{f}_1, \texttt{f}_2, ... \texttt{f}_n\}$
-divided into \texttt{g} groups.
-Each group then gets their own structure, named \texttt{Sg}.
-In order to actually use our split structure we iterate through the set
-of variable declarations in each function and determine individually if the
-declaration can be split into $g$ declarations. A simple illustrative example is
+Modifying \mir blocks so that structure splitting takes place is a multistep
+process, the first of which is changing \mir local variable declarations in order to 
+specify exactly how structures are split.
+
+The simplest example, where a variable declaration has exactly the type of the structure that
+is split, is
 in Figure \ref{fig:localdeclbefore}
 
 \begin{figure*}
@@ -307,29 +311,104 @@ let _3: S3;
   \label{fig:localdeclbefore}
 \end{figure*}
 
-\todo[inline]{Need to fix this paragraph}
+\todo[inline]{Need to talk about splitting function arguments}
 Of course deciding whether or not to split a declaration is not a easy as just
 checking if it is exactly what we want.  
 There are, at time of writing, 22 different kinds of types a variable declaration
 can have. For the purposes of this paper, these types can be separated into seven
 groups; primitive, internal, reference, arrays, tuples, structures,
-and functions.
+and function pointers.
+
+\begin{figure*}
+  \begin{minipage}[t]{0.5\linewidth}
+\begin{minted}{rust}
+// reference
+let _1: &S;
+
+
+// unsized array (slice)
+let _2: [S];
+
+
+// sized array
+let _3: [S, 10000];
+
+
+
+\end{minted}
+  \end{minipage}
+  \begin{minipage}[t]{0.5\linewidth}
+\begin{minted}{rust}
+
+let _1: &S1;
+let _2: &S2;
+let _3: &S3;
+
+let _4: [S1];
+let _5: [S2];
+let _6: [S3];
+
+let _7: [S1, 10000];
+let _8: [S2, 10000];
+let _9: [S3, 10000];
+\end{minted}
+  \end{minipage}
+  
+  \caption{Reference and Array Splitting $g = 3$}
+  \label{fig:refedecl}
+\end{figure*}
 
 We can safely ignore primitive and internal types. References, and
-arrays are split by recursively checking their internal component and splitting
-based on that.
+arrays are split by checking by recursively checking their referent types
+and splitting them if they are splittable, as in Figure \ref{fig:refedecl}.
+
+Tuples are where decisions start to become complicated, because splitting tuples 
+can lead to some unacceptable run time overheads. If we just split the tuple as we did the
+reference and array cases, where we just create $g$ tuples for each substructure, we are 
+wasting a good deal of time and memory reproducing the assignments to the other elements
+in the tuple. 
 
 % As long as we do not split a tuple with more then one structure, tuples are
 % also the same. Why we can't split multiple structures in a tuple is discussed in
 % Section \ref{sec:limits}.
 
+\subsection{Structures}
 Structures are very easy in the case that the structure is exactly what we are
 looking for. Where things get tricky is when some other structure is
-parameterized by the structure we are interested in. 
+parameterized by the structure we are interested in. This case is very important
+to handle correctly, since generic structures are very common in \rust. The most common,
+and thankfully the easiest to deal with, is \vec. \vec is the \rust structure analygous
+to the \cpp \texttt{std::vector}. It is used practically everywhere, properly handling it
+is extremely important, since most of the applications we would be targeting would be storing
+their structures in a \vec, and thus not handling would result in structure splitting being
+rather ineffective.
+
+The current method of handling this is a whitelist of some of the most common containers
+in the \rust standard library, with the ability for users to declare their container as split-friendly.
+Benefits of this will be discussed in Section \ref{sec:discuss}.
+
+\subsection{Function Pointers}
+Functions pointers aren't split in the same way that other types might be, but
+we still need to modify their type signature so that we can call them in a way
+that preserves our structure splitting benefits. Essentially we walk through the
+signature of the function and replace each splittable structure with a tuple
+of each of it's substructures. This works because we walk through each argument and 
+return value \textit{recursively}, which means that if the function accepts a reference
+to a splittable structure we modify it so it takes a tuple of references to substructures.
+This is important because iteration in \rust often uses the function \texttt{map}, which
+takes in an anonymous function whose arguments are references. 
+
+We are only modifying the signature of the function here, in Section \ref{sec:assign} we will
+discuss how we modify the contents of the function in order to actually perform structure
+splitting.
 
 \todo[inline]{Finish this}
 
 \todo[inline]{Talk about functions}
+
+\section{Assignment replacement}
+\label{sec:assign}
+All we have done so far is split variable declarations, we still need
 
 \section{Limitations}
 \label{sec:limits}
@@ -343,19 +422,6 @@ thus cannot modify function definitions to accept the tuple of structures we
 pass in. This problem could be solved by a few methods, all of which require
 either significant compiler modification or the introduction of run
 time cost. 
-
-\todo{rephrase}
-It also do not support splitting more than one structure at a time. This is
-partially because it made implementation easier and partially because doing so
-could result in some potentially very inefficient code. This is because
-splitting multiple structures in tuples could lead to some very, very
-inefficient results. Consider the case in which there are $n$ structures split
-into $m$ substructures each. If one of each structure was put in an tuple, then
-splitting the tuple completely would result in $n^m$\todo{Check this math} total tuples, which can lead
-to some serious run time costs, especially if the tuples are parameters to
-another type.
-
-A solution to this is to deconstruct tuples inside function definitions
 
 \chapter{Discussion}
 \label{sec:discuss}
@@ -399,10 +465,11 @@ a project that should be usable by the average user.
 %   \label{fig:vec-split}
 % \end{figure*}
 
+\todo[inline]{Getting this to work with Vec is actually really important so I might do that this week}
 The first, and most important, requirement would be to allow for the splitting
 of certain types of user defined structures. The first, and most obvious,
 benefit for this would be for splitting various containers, the most obvious
-being \vec. \vec is the default \rust resizable array class, analagous to \texttt{std::vector}
+being \vec. \vec is the default \rust resizable array class, analagous to \texttt{std::vector}.
 
 \todo[inline]{Talk about applications on locks}
 \todo[inline]{Maybe talk about why not \llvm or \texttt{ghc}}
