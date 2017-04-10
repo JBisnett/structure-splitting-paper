@@ -68,13 +68,13 @@
 \def \llvmir {\llvmirname{}\xspace}
 \newcommand{\mlname}{{\texttt{ML}}}
 \def \ml {\mlname{}\xspace}
-
 \newcommand{\vecname}{{\texttt{Vec}}}
 \def \vec{\vecname{}\xspace}
-
+\newcommand{\projectname}{{\texttt{LAGER}}}
+\def \name{\projectname\xspace}
 
 \begin{document}
-\title{Locality Optimizing Compiler Transforms in Rust}
+\title{\name: LocAlity optimizinG compilEr transforms in Rust}
 \author{Jacob Bisnett}
 \maketitle
 \pagestyle{fancy}
@@ -171,9 +171,19 @@ information can fit on each line.
 Performing this optimization, however, requires some work. Firstly one
 needs to decide where to split the structure, which fields should go in
 each substructure. This is not a trivial problem, but thankfully a decent
-solution has been found...
+solution has been found\cite{Zhong:2004:ARS:996893.996872}.
+Essentially running a program one and collecting
+a memory trace one can generate a fairly good estimate of which fields are more
+often accessed together by measuring reuse distances and thus generate a splitting
+which, while not provably optimal, does manage to successfully split structures and
+provide locality benefit.
 
-\todo[inline]{should explain how structure splitting works in detail.  Cite related work, e.g. Zhong et al. PLDI 2004 and more recent papers citing the PLDI 2004 paper.}
+\todo[inline]{Might need a better last sentence}
+The downside of that approach is while the authors did show that their
+structure splitting method was benefitial, it was released in 2004 and targetted
+\c. It required that the \c program be strongly statically typed, which is
+not the case of a large number of \c programs, thus meaning it provided a non-negligible
+load on the \c programmer. 
 
 \section{\rustc}
 \label{sec:rustc}
@@ -307,7 +317,7 @@ Tuplification is the tranformation of some parametric type \texttt{T<S>},
 where \texttt{S} is a structure we have split, into
 \texttt{T<(S1, S2, ..., Sn)>} where
 \texttt{Si} is the $i^{th}$ substructure of \texttt{S}. 
-\todo[inline]{Add an illustrative example}
+A short example is in Figure 
 
 One place we unconditionally perform in place modification is in function
 arguments. This is primarily a simplification measure, since its easier to
