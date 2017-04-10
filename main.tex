@@ -278,35 +278,47 @@ splitting is important for the default case.
 \todo[inline]{More here}
 \section{\mir modification}
 
-\todo[inline]{This also needs some work}
-The majority of my work is a series of \mir passes that actually
-implements the structure splitting. While the actual structure splitting should
-be in some ways manual, it is vital that the actual splitting logic is
-completely automatic, while introducing as little run time cost as possible.
+The series of \mir modifications needed to automatically implement structure
+splitting code is also made of two parts, variable declaration modification and
+assignment modification.
 
-Modifying \mir blocks so that structure splitting takes place is a multistep
-process, the first of which is changing \mir local variable declarations in order to 
-specify exactly how structures are split.
+\subsection{Declaration Modification}
 
 Variable declarations can take on one of 22 different types, some of which can
 be parameterized by other types. Our action when we see a type can be divided
-into three cases, no modification, in place modification, and split modification.
+into three cases, no modification, tuplification, and splitting.
 
-\subsection{No Modification}
+\subsubsection{No Modification}
 Some types we do not need to touch. These include primative types such as
 integers, floats, and booleans, as well as internal error types, types used in
 type inference\footnote{Since \mir occurs after types inference}, and any
 parameterized type that doesn't contain any structure we are interested in.
 
-\subsection{In Place Modification}
-Other types we only need to make in place changes to the type, meaning we do not
-need to generate more variable declarations in order to process them.
+\subsubsection{Tuplification}
+For types the can contain one of the split structures, we have two primary
+options, the first being what we will call tuplification of the type.
+
+\todo[inline]{Fix this paragraph}
+Tuplification is the tranformation of some parametric type \texttt{T<S>},
+where \texttt{S} is a structure we have split, into
+\texttt{T<(S1, S2, ..., Sn)>} where
+\texttt{Si} is the $i^{th}$ substructure of \texttt{S}. 
+\todo[inline]{Add an illustrative example}
 
 One place we unconditionally perform in place modification is in function
 arguments. This is primarily a simplification measure, since its easier to
 tuplify the type of function arguments then to extend the signature of the
 function. This additionally makes it impossible to give our function more
 arguments then \rust allows\todo{Don't know if this is true}.
+Similarly we perform in place tupling in function pointers so that we correctly
+call our modified functions.
+
+At first glance this could
+
+Another place we do in place modification is as part of tuples. If we have some
+tuple which contains a splittable structure we replace the type of that
+structure with a tuple containing the substructures of that structure.
+\todo{Possible exception when tuple of only structures}
 
 % \begin{figure*}
 %   \begin{minipage}[t]{0.5\linewidth}
@@ -481,14 +493,26 @@ a project that should be usable by the average user.
 %   \label{fig:vec-split}
 % \end{figure*}
 
-\todo[inline]{Getting this to work with Vec is actually really important so I might do that this week}
-The first, and most important, requirement would be to allow for the splitting
-of certain types of user defined structures. The first, and most obvious,
-benefit for this would be for splitting various containers, the most obvious
-being \vec. \vec is the default \rust resizable array class, analagous to \texttt{std::vector}.
+% \todo[inline]{Getting this to work with Vec is actually really important so I might do that this week}
+% The first, and most important, requirement would be to allow for the splitting
+% of certain types of user defined structures. The first, and most obvious,
+% benefit for this would be for splitting various containers, the most obvious
+% being \vec. \vec is the default \rust resizable array class, analagous to \texttt{std::vector}.
 
 \todo[inline]{Talk about applications on locks}
 \todo[inline]{Maybe talk about why not \llvm or \texttt{ghc}}
+
+\section{Rust Culture}
+\label{sec:culture}
+
+Rust has no good
+formal specification. The specification for \mir are practically non-existent. %https://github.com/rust-specification/english-specification
+The closest thing there is are an RFC proposing \mir, and a blog post announcing
+it, neither of which specify exactly what it can do, and both of which are now
+out of date with the current implementation.
+
+Thus, until \mir stablizes and \rust gets an official standard, it is impossible
+to truly know if this approach will work on all platforms in all cases. As of 
 
 \chapter{Issues}
 
@@ -509,16 +533,6 @@ good way of dealing with unsafe code. Unsafe code allows for raw pointer
 arithmetic, which breaks structure splitting. Rust does have the benefit that
 unsafe code must be contained in explicitly declared code blocks.
 
-
-
-% \section{Rust Culture}
-% \label{sec:culture}
-
-% Rust, as opposed to one of it's parent language's \texttt{Haskell}, has no good
-% formal specification. The specification for \mir are practically non-existent. %https://github.com/rust-specification/english-specification
-% The closest thing there is are an RFC proposing \mir, and a blog post announcing
-% it, neither of which specify exactly what it can do, and both of which are now
-% out of date with the current implementation .
 
 % \chapter{Notes}
 % \label{sec:remove}
