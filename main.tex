@@ -83,6 +83,10 @@
 \doublespacing
 \label{sec:intro}
 
+\todo[inline]{Safe structure splitting in a general purpose language}
+\todo[inline]{Why other languages do not permit safe structure splitting (java: inheritance) (haskell: insufficient control over memory), first structure splitting}
+\todo[inline]{Don't call it a platform, start by saying its a compiler}
+
 The programming language \rust is fairly new, but already gained a considerable
 following due to its placement as a safe and easy to use alternative to \c and
 \cpp. \rust's primary advantage is its robust compile time checks and type
@@ -532,6 +536,9 @@ Another major issue is that, because there is no language standard, there is no
 good way of dealing with unsafe code. Unsafe code allows for raw pointer
 arithmetic, which breaks structure splitting. Rust does have the benefit that
 unsafe code must be contained in explicitly declared code blocks.
+
+\chapter{Research Platform}
+
 
 
 % \chapter{Notes}
