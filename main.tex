@@ -74,7 +74,7 @@
 
 
 \begin{document}
-\title{Loca1lity Optimizing Compiler Transforms in Rust}
+\title{Locality Optimizing Compiler Transforms in Rust}
 \author{Jacob Bisnett}
 \maketitle
 \pagestyle{fancy}
@@ -184,7 +184,6 @@ is likely part of the reason why very little \rust specific optimizations had
 been attempted, since \texttt{AST}'s are typically not suited for serious
 optimization work. Instead, optimizations were delegated to \llvmir, which \hir
 was translated into. 
-%rust
 
 \todo[inline]{More here}
 
@@ -212,9 +211,11 @@ My contribution in this space is the creation of a platform for further
 research \rust structure splitting to build upon. On top of this platform I have
 created a sample implementation of a structure splitting compiler pass which
 has been shown to generate significantly faster code, but does require some user
-input on a few of a trickier decisions. 
+input on a few of a trickier decisions. While requiring user input is not ideal
+for a compiler pass, it is a significant first step in a fully automatic solution.
 
-\todo[inline]{This should probably be the focus of the paper}
+The project can be roughly separated into two parts, structure splitting and
+\mir modification.
 
 \section{Structure Splitting}
 
@@ -287,37 +288,53 @@ Modifying \mir blocks so that structure splitting takes place is a multistep
 process, the first of which is changing \mir local variable declarations in order to 
 specify exactly how structures are split.
 
-The simplest example, where a variable declaration has exactly the type of the structure that
-is split, is
-in Figure \ref{fig:localdeclbefore}
+Variable declarations can take on one of 22 different types, some of which can
+be parameterized by other types. Our action when we see a type can be divided
+into three cases, no modification, in place modification, and split modification.
 
-\begin{figure*}
-  \begin{minipage}[t]{0.5\linewidth}
-\begin{minted}{rust}
-// This declaration...
-let _1: S;
-\end{minted}
-  \end{minipage}
-  \begin{minipage}[t]{0.5\linewidth}
-\begin{minted}{rust}
-// ... turns into this
-let _1: S1;
-let _2: S2;
-let _3: S3;
-\end{minted}
-  \end{minipage}
+\subsection{No Modification}
+Some types we do not need to touch. These include primative types such as
+integers, floats, and booleans, as well as internal error types, types used in
+type inference\footnote{Since \mir occurs after types inference}, and any
+parameterized type that doesn't contain any structure we are interested in.
+
+\subsection{In Place Modification}
+Other types we only need to make in place changes to the type, meaning we do not
+need to generate more variable declarations in order to process them.
+
+One place we unconditionally perform in place modification is in function
+arguments. This is primarily a simplification measure, since its easier to
+tuplify the type of function arguments then to extend the signature of the
+function. This additionally makes it impossible to give our function more
+arguments then \rust allows\todo{Don't know if this is true}.
+
+% \begin{figure*}
+%   \begin{minipage}[t]{0.5\linewidth}
+% \begin{minted}{rust}
+% // This declaration...
+% let _1: S;
+% \end{minted}
+%   \end{minipage}
+%   \begin{minipage}[t]{0.5\linewidth}
+% \begin{minted}{rust}
+% // ... turns into this
+% let _1: S1;
+% let _2: S2;
+% let _3: S3;
+% \end{minted}
+%   \end{minipage}
   
-  \caption{Simple Local Declarations Splitting $g = 3$}
-  \label{fig:localdeclbefore}
-\end{figure*}
+%   \caption{Simple Local Declarations Splitting $g = 3$}
+%   \label{fig:localdeclbefore}
+% \end{figure*}
 
-\todo[inline]{Need to talk about splitting function arguments}
-Of course deciding whether or not to split a declaration is not a easy as just
-checking if it is exactly what we want.  
-There are, at time of writing, 22 different kinds of types a variable declaration
-can have. For the purposes of this paper, these types can be separated into seven
-groups; primitive, internal, reference, arrays, tuples, structures,
-and function pointers.
+% \todo[inline]{Need to talk about splitting function arguments}
+% Of course deciding whether or not to split a declaration is not a easy as just
+% checking if it is exactly what we want.  
+% There are, at time of writing, 22 different kinds of types a variable declaration
+% can have. For the purposes of this paper, these types can be separated into seven
+% groups; primitive, internal, reference, arrays, tuples, structures,
+% and function pointers.
 
 \begin{figure*}
   \begin{minipage}[t]{0.5\linewidth}
@@ -332,8 +349,6 @@ let _2: [S];
 
 // sized array
 let _3: [S, 10000];
-
-
 
 \end{minted}
   \end{minipage}
@@ -358,15 +373,15 @@ let _9: [S3, 10000];
   \label{fig:refedecl}
 \end{figure*}
 
-We can safely ignore primitive and internal types. References, and
-arrays are split by checking by recursively checking their referent types
-and splitting them if they are splittable, as in Figure \ref{fig:refedecl}.
+% We can safely ignore primitive and internal types. References, and
+% arrays are split by checking by recursively checking their referent types
+% and splitting them if they are splittable, as in Figure \ref{fig:refedecl}.
 
-Tuples are where decisions start to become complicated, because splitting tuples 
-can lead to some unacceptable run time overheads. If we just split the tuple as we did the
-reference and array cases, where we just create $g$ tuples for each substructure, we are 
-wasting a good deal of time and memory reproducing the assignments to the other elements
-in the tuple. 
+% Tuples are where decisions start to become complicated, because splitting tuples 
+% can lead to some unacceptable run time overheads. If we just split the tuple as we did the
+% reference and array cases, where we just create $g$ tuples for each substructure, we are 
+% wasting a good deal of time and memory reproducing the assignments to the other elements
+% in the tuple. 
 
 % As long as we do not split a tuple with more then one structure, tuples are
 % also the same. Why we can't split multiple structures in a tuple is discussed in
@@ -414,7 +429,8 @@ All we have done so far is split variable declarations, we still need
 \label{sec:limits}
 Currently my library does not support nesting split structures inside other structures.
 This is completely feasible, but requires some fairly extensive compiler
-modifications in order to work correctly.
+modifications in order to work correctly. Many use cases for this functionality
+could switch to a tuple based approach.
 
 It also doesn't support exporting split structures outside of the current crate.
 This is because the compiler cannot easily access code out of the crate, and
