@@ -169,7 +169,7 @@ needs to decide where to split the structure, which fields should go in
 each substructure. This is not a trivial problem, but thankfully a decent
 solution has been found...
 
-\todo[inline]{should explain how structure splitting works in detail}
+\todo[inline]{should explain how structure splitting works in detail.  Cite related work, e.g. Zhong et al. PLDI 2004 and more recent papers citing the PLDI 2004 paper.}
 
 \section{\rustc}
 \label{sec:rustc}
@@ -194,7 +194,7 @@ and \llvmir.
 
 %this is sort of relevant since it saves on some work I discuss later. Might remove
 \mir is a fairly standard intermediate representation. \mir represents functions, 
-or function-like units like static blocks and closures, as
+or function-like units like static blocks and closures, 
 as a set of basic blocks. Basic blocks are composed of a series of statements
 and end in some sort of terminator, of which there are several types. 
 Function calls can only be made as part of a terminator. This is
