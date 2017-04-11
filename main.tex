@@ -546,6 +546,12 @@ unsafe code must be contained in explicitly declared code blocks.
 
 \chapter{Research Platform}
 
+While \name is complete and functional in itself, it opens the door for 
+a good deal more research to occur in this domain. Increasing the automation
+of the process is definitely important regardless of my hesitence to automate
+the structure splitting process. Of considerable importance is also
+the ability to decide which structures can be considered containers and thus 
+can be split completely as opposed to just tuplified.
 
 
 % \chapter{Notes}
@@ -584,14 +590,6 @@ unsafe code must be contained in explicitly declared code blocks.
 % annoying, ie \texttt{Copy} and \texttt{Clone}.
 
 % \section{Polymorphism}
-
-% \section{User defined data structures}
-% Arrays are fine, but are difficult to use on their own. You really need to
-% handle Vectors, and Vectors are... complecated. Basically we needed to define a
-% trait, and users need to implement that trait on objects when it is safe to, ie
-% when it is stored in a ``dumb'' way, that doesn't semantically depend on the
-% contents of the object. This allows for potentially better cache behavior in
-% stuff such as HashMaps.
 
 \bibliography{main}{}
 \bibliographystyle{acm}
