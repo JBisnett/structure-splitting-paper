@@ -83,9 +83,6 @@
 \doublespacing
 \label{sec:intro}
 
-\todo[inline]{Why other languages do not permit safe structure splitting (java: inheritance) (haskell: insufficient control over memory), first structure splitting}
-\todo[inline]{Don't call it a platform, start by saying its a compiler}
-
 The programming language \rust is fairly new, but already gained a considerable
 following due to its placement as a safe and easy to use alternative to \c and
 \cpp. \rust's primary advantage is its robust compile time checks and type
@@ -194,8 +191,7 @@ it would be possible to implement proper structure splitting.
 \section{\rustc}
 \label{sec:rustc}
 
-\rustc is the primary 
-
+\rustc is the most often used, and likely only, compiler for \rust.
 \rustc is effectively a series of conversions from
 \rust code to various internal representations and finally into machine code.
 First is tokenizes and converts to an \texttt{AST}, then converts that into a
@@ -205,9 +201,12 @@ internal representation in which serious semantic analysis was performed, which
 is likely part of the reason why very little \rust specific optimizations had
 been attempted, since \texttt{AST}'s are typically not suited for serious
 optimization work. Instead, optimizations were delegated to \llvmir, which \hir
-was translated into. 
+was translated into.
 
-\todo[inline]{More here}
+However, the translation from \hir to \llvmir was a long and complicated process.
+Much of the semantics of \rust were encoded in the process. To make this 
+process easier, a second internal representation was created, called \mir.	
+
 
 \subsection{\mir}
 \mir is fairly new; it was released in April 2016\cite{mirintro}. It acts as a
@@ -420,7 +419,7 @@ let _9: [S3, 10000];
 \label{sec:splitting}
 
 Actually splitting variable declarations is important since it is where
-locality benefits actually come in. 
+locality benefits actually come in. The simplest case is the one in which
 
 
 \subsubsection{Structures}
