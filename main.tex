@@ -282,9 +282,12 @@ user could potentially prevented from making changes to their code
 since it could break the optimization.
 
 Secondly, deciding how to split a structure is already a solved problem,
-but the process is rather expensive. It seems like a better idea to just allow the user to either; one, 
-intelligently reason about there program and split their structure how it makes the most sense, or two, 
-let them build an already existing tracing solution into their build system, and thus get the advantage
+but the process is rather expensive. It seems like a better idea to just 
+allow the user to either; one, 
+intelligently reason about there program and split their structure 
+how it makes the most sense, or two, 
+let them build an already existing tracing solution into their build system
+, and thus get the advantage
 of deciding when and where to spend the computation time.
 
 Thirdly, it is important that structure splitting be an ``opt-in" process.
@@ -299,8 +302,8 @@ splitting is important for the default case.
 \section{\mir modification}
 
 The series of \mir modifications needed to automatically implement structure
-splitting code is also made of two parts, variable declaration modification and
-assignment modification.
+splitting code is made of three parts, variable declaration modification,
+function call modification, and assignment modification.
 
 \subsection{Declaration Modification}
 
@@ -457,35 +460,53 @@ This makes the code simpler, but the detail is largely irrelavent to the
 idea, and thus examples will all assume the original declaration is removed.
 It is removed when the translation to \llvmir is completed anyway.}
 
+References and arrays are handled the same as the simple case, so whenever we 
+see a reference or an array containing a splittable structure, we split the declaration.
+This process holds for any level of nestings. Examples of this
+can be seen in Figure \ref{sec:splitting}.
 
+\todo[inline]{This needs a lot of work, and might not even get implemented in time}
+\todo[inline]{Vec doesn't work out of the box since sort\_by, sort\_by\_key, and 
+binary\_search\_by exist.
+Maybe should do something smart if the method has a function parameter that takes in
+the structure? Maybe iterate and collect? Possibly create a function in Vec that 
+takes in a member function and runs in on a tuple? There is potential this should be moved
+to future work section. Maybe just abort compilation if these functions are called on
+split Vec's? There should be a general solution to this.
+Might have to require run time cost in these cases, iterate then zip then apply then
+unzip and return}
 
 \subsubsection{Structures}
 \label{sec:param}
-This case is very important
-to handle correctly, since generic structures are very common in \rust. The most common,
+While in the general case we do not split a structure when it is parameterized by
+a splittable structure, there are cases in which we want to split the base structure
+instead of just tuplifying the splittable structure. It is very important
+that we handle this correctly, since generic structures are very common in \rust. The most common,
 and thankfully the easiest to deal with, is \vec. \vec is the \rust structure analygous
-to the \cpp \texttt{std::vector}. It is used practically everywhere, properly handling it
-is extremely important, since most of the applications we would be targeting would be storing
-their structures in a \vec, and thus not handling would result in structure splitting being
+to the \cpp \texttt{std::vector}. It is used practically everywhere, so properly handling it
+is extremely important. Most of the applications we would be targeting would be storing
+their structures in a \vec, so not handling would result in structure splitting being
 rather ineffective.
 
 The current method of handling this is a whitelist of some of the most common containers
-in the \rust standard library, with the ability for users to declare their container as split-friendly.
+in the \rust standard library, with the ability for users to declare their container as 
+split-friendly.
 Benefits of this will be discussed in Section \ref{sec:discuss}.
 
+\section{Function Call Modification}
+\label{sec:func}
 
-\section{Assignment replacement}
+\section{Assignment Replacement}
 \label{sec:assign}
-All we have done so far is split variable declarations, we still need
 
 \section{Limitations}
 \label{sec:limits}
-Currently my library does not support nesting split structures inside other structures.
+Currently \name does not support nesting split structures inside other structures.
 This is completely feasible, but requires some fairly extensive compiler
 modifications in order to work correctly. Many use cases for this functionality
 could switch to a tuple based approach.
 
-It also doesn't support exporting split structures outside of the current crate.
+\name also doesn't support exporting split structures outside of the current crate.
 This is because the compiler cannot easily access code out of the crate, and
 thus cannot modify function definitions to accept the tuple of structures we
 pass in. This problem could be solved by a few methods, all of which require
