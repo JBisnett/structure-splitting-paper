@@ -83,7 +83,7 @@
 \doublespacing
 \label{sec:intro}
 
-\todo[inline]{}
+\todo[inline]{Safe structure splitting in a general purpose language}
 \todo[inline]{Why other languages do not permit safe structure splitting (java: inheritance) (haskell: insufficient control over memory), first structure splitting}
 \todo[inline]{Don't call it a platform, start by saying its a compiler}
 
@@ -210,11 +210,11 @@ execute\footnote{This isn't strictly true since inline assembly is evaluated as
   \todo[inline]{More here}
 
 \chapter{\name: Structure Splitting in Rust}
-\name is a compiler which implements safe structure splitting in 
-a general purpose language. This allows \name to go beyond previous 
-approaches and guarentee no semantic changes in safe \rust.
-\footnote{Exactly what effect it has on unsafe \rust is discussed in the next 
-section and section \ref{sec:limits}}.
+
+\name is a structure splitting compiler modification that attempts to fix the issues with
+previous approaches by implementing structure splitting mechanism in \rustc, where static type
+safety and general memory safety allow for structure splitting with little effect on program
+semantics\footnote{Exactly what effect it has is discussed in the next section and section \ref{sec:limits}}.
 
 \name can be roughly separated into two parts, structure splitting and
 \mir modification.
@@ -299,11 +299,17 @@ For types the can contain one of the split structures, we have two primary
 options, the first being what we will call tuplification of the type.
 
 \todo[inline]{Fix this paragraph}
-Tuplification is the tranformation of some parametric type \texttt{T<S>},
-where \texttt{S} is a structure we have split, into
-\texttt{T<(S1, S2, ..., Sn)>} where
-\texttt{Si} is the $i^{th}$ substructure of \texttt{S}. 
-A short example is in Figure 
+Tuplification is when we take one of our structures \texttt{S} and convert it
+into a tuple of substructures \texttt{(S1, S2, ..., Sg}. In general this 
+doesn't typically improve locality, and is effectively equivalent to 
+field reordering\footnote{In fact this could make locality worse since each
+structure would need to be aligned properly, making the tuple possibly
+bigger then the sum of it's parts.}. However it is important that we do this to
+ensure semantic correctness, and it does help use preserve locality, since we can
+do the process preserving the recursive type structure, meaning that
+we can convert a reference to a structure \texttt{&S} and convert it into 
+\texttt{&S1, &S2, ..., &Sg}, which preserves the original location of the 
+data as opposed to simply reassigning the fields into a \texttt{&S}.
 
 One place we unconditionally perform in place modification is in function
 arguments. This is primarily a simplification measure, since its easier to
@@ -313,12 +319,17 @@ arguments then \rust allows\todo{Don't know if this is true}.
 Similarly we perform in place tupling in function pointers so that we correctly
 call our modified functions.
 
-At first glance this could
-
 Another place we do in place modification is as part of tuples. If we have some
 tuple which contains a splittable structure we replace the type of that
 structure with a tuple containing the substructures of that structure.
-\todo{Possible exception when tuple of only structures}
+
+\todo[inline]{fix this}
+Additionally, we also perform tuplification when we attempt to split
+structs that we could not ordinarily split that are parameterized by
+one of our structures. This again keeps the original locality if
+the struct is passed by reference, as well as allowing use to guarentee
+semantic correctness since the the structure expects a tuple, and thus
+can interface properly with our transformed code.
 
 % \begin{figure*}
 %   \begin{minipage}[t]{0.5\linewidth}
