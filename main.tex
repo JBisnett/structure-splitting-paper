@@ -74,7 +74,7 @@
 \def \name{\projectname\xspace}
 
 \begin{document}
-\title{\name: LocAlity optimizinG compilEr transforms in Rust}
+\title{\name: LocAlity optimizinG compilEr for Rust}
 \author{Jacob Bisnett}
 \maketitle
 \pagestyle{fancy}
@@ -101,8 +101,6 @@ errors by preventing programs that could contain them from compiling.
 \rust does allow users to circumvent these rules with ``unsafe'' code,
 but this unsafety must be explicitly declared and thus dangerous behavior can be
 isolated.
-
-%maybe list companies using Rust? mozilla, amazon
 
 While \rust is not the only language that provides this level of safety, it is
 the only popular language that provides this level of safety with little to no overhead,
@@ -135,19 +133,11 @@ Important in that last statement was the fact that \rust has the \textit{potenti
 to be as fast as \c, and while it performs in the same order of magnitude, its not
 quite as fast in many cases, as seen in Figure \ref{fig:bench}.
 A potential reason this is that \rust doesn't have the compiler maturity \c has.
-%citations?
 
-%possibly talk more about this?
 The exciting part about the future of \rust is not just that it will eventually
 reach parity with \c, but that it could eventually go beyond it. There are
 already a few \rust specific optimizations that \c and \cpp cannot do, but that
 set is far too small to provide significant gains as of yet.
-
-% FIXME: This may not be true
-% However, \rust's newness does have a benefit; it doesn't have a standard yet.
-% \rust's lack of a standard means that current compiler writers can be more
-% experimental with their compilation passes and still expect them to end up in a
-% production compiler.
 
 One significant addition, an addition which is the primary subject of this
 paper, would be to allow for the primary \rust compiler, \rustc, to split
@@ -219,16 +209,14 @@ execute\footnote{This isn't strictly true since inline assembly is evaluated as
   
   \todo[inline]{More here}
 
-\chapter{Structure Splitting in Rust}
+\chapter{\name: Structure Splitting in Rust}
 
-My contribution in this space is the creation of a platform for further
-research \rust structure splitting to build upon. On top of this platform I have
-created a sample implementation of a structure splitting compiler pass which
-has been shown to generate significantly faster code, but does require some user
-input on a few of a trickier decisions. While requiring user input is not ideal
-for a compiler pass, it is a significant first step in a fully automatic solution.
+\name is a structure splitting compiler modification that attempts to fix the issues with
+previous approaches by implementing structure splitting mechanism in \rustc, where static type
+safety and general memory safety allow for structure splitting with little effect on program
+semantics\footnote{Exactly what effect it has is discussed in the next section and section \ref{sec:limits}}.
 
-The project can be roughly separated into two parts, structure splitting and
+\name can be roughly separated into two parts, structure splitting and
 \mir modification.
 
 \section{Structure Splitting}
@@ -256,7 +244,6 @@ struct S2 {
   \label{fig:split}
 \end{figure*}
 
-\todo[inline]{This part needs work, should mention the whole platform thing.}
 Splitting \rust structures is the simplest part of the process. It is currently
 implemented as part of the \rust macro system, where the user of my library
 would add an annotation, as in Figure \ref{fig:split}, which generates a number
@@ -275,7 +262,6 @@ user could potentially prevented from making changes to their code
 since it could break the optimization.
 
 Secondly, deciding how to split a structure is already a solved problem,
-%cite structure splitting
 but the process is rather expensive. It seems like a better idea to just allow the user to either; one, 
 intelligently reason about there program and split their structure how it makes the most sense, or two, 
 let them build an already existing tracing solution into their build system, and thus get the advantage
