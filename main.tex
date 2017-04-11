@@ -74,7 +74,7 @@
 \def \name{\projectname\xspace}
 
 \begin{document}
-\title{\name: LocAlity optimizinG compilEr for Rust}
+\title{\name: Safe Structure Splitting in a General Purpose Language}
 \author{Jacob Bisnett}
 \maketitle
 \pagestyle{fancy}
@@ -83,7 +83,6 @@
 \doublespacing
 \label{sec:intro}
 
-\todo[inline]{Safe structure splitting in a general purpose language}
 \todo[inline]{Why other languages do not permit safe structure splitting (java: inheritance) (haskell: insufficient control over memory), first structure splitting}
 \todo[inline]{Don't call it a platform, start by saying its a compiler}
 
@@ -168,12 +167,12 @@ often accessed together by measuring reuse distances and thus generate a splitti
 which, while not provably optimal, does manage to successfully split structures and
 provide locality benefit.
 
-\todo[inline]{Might need a better last sentence}
-The downside of that approach is while the authors did show that their
-structure splitting method was benefitial, it was released in 2004 and targetted
-\c. It required that the \c program be strongly statically typed, which is
-not the case of a large number of \c programs, thus meaning it provided a non-negligible
-load on the \c programmer. 
+While the authors created a great system for automating the structure splitting 
+process they did not find a great way of using said split structures. They did
+use the system in a small research compiler for \c, but it was severely limited
+by the fact that they had to limit their compiler to a subset of \c programs
+which had a fully static type system, had a decent amount of run time overhead, 
+and likely would not have working in parallel programs.
 
 \section{\rustc}
 \label{sec:rustc}
