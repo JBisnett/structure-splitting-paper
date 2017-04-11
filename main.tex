@@ -222,8 +222,11 @@ so it can be known statically that every statement of a basic block will
 execute\footnote{This isn't strictly true since inline assembly is evaluated as
   a statement, but inline assembly can only be used during unsafe blocks
   anyways, so its not usually relevant}.
-  
-  \todo[inline]{More here}
+
+  Since \mir is so new, it fairly easy to verify that structure splitting has
+  not been successfully implemented in the language\footnote{In fact, field
+  reordering has only recently been implemented, meaning its even less
+  likely it has been attempted before\todo{Find a citation for this}}
 
 \chapter{\name: Structure Splitting in Rust}
 
@@ -307,30 +310,32 @@ into three cases, no modification, tuplification, and splitting.
 \subsubsection{No Modification}
 Some types we do not need to touch. These include primative types such as
 integers, floats, and booleans, as well as internal error types, types used in
-type inference\footnote{Since \mir occurs after types inference}, and any
+type inference\footnote{\mir occurs after types inference}, and any
 parameterized type that doesn't contain any structure we are interested in.
 
 \subsubsection{Tuplification}
 For types the can contain one of the split structures, we have two primary
 options, the first being what we will call tuplification of the type.
 
-\todo[inline]{Fix this paragraph}
 Tuplification is when we take one of our structures \texttt{S} and convert it
 into a tuple of substructures \texttt{(S1, S2, ..., Sg}. In general this 
 doesn't typically improve locality, and is effectively equivalent to 
 field reordering\footnote{In fact this could make locality worse since each
 structure would need to be aligned properly, making the tuple possibly
 bigger then the sum of it's parts.}. However it is important that we do this to
-ensure semantic correctness, and it does help use preserve locality, since we can
-do the process preserving the recursive type structure, meaning that
+ensure semantic correctness, and it does help use preserve locality,
+since we keep the underlying type structure as well as we can meaning that
 we can convert a reference to a structure \texttt{\&S} and convert it into 
 \texttt{\&S1, \&S2, ..., \&Sg}, which preserves the original location of the 
-data as opposed to simply reassigning the fields into a \texttt{\&S}.
+data as opposed to simply reassigning the fields into a \texttt{\&S}. We do 
+this for as many types as we can, such as arrays, pointers, and other similar
+structures.
 
 One place we unconditionally perform in place modification is in function
 arguments. This is primarily a simplification measure, since its easier to
 tuplify the type of function arguments then to extend the signature of the
-function. This additionally makes it impossible to give our function more
+function. This additionally makes it impossible to accidentally 
+give our functions more
 arguments then \rust allows\todo{Don't know if this is true}.
 Similarly we perform in place tupling in function pointers so that we correctly
 call our modified functions.
@@ -339,33 +344,30 @@ Another place we do in place modification is as part of tuples. If we have some
 tuple which contains a splittable structure we replace the type of that
 structure with a tuple containing the substructures of that structure.
 
-\todo[inline]{fix this}
-Additionally, we also perform tuplification when we attempt to split
-structs that we could not ordinarily split that are parameterized by
-one of our structures. This again keeps the original locality if
-the struct is passed by reference, as well as allowing use to guarentee
-semantic correctness since the the structure expects a tuple, and thus
-can interface properly with our transformed code.
+One place we usually do tuplification is when our splittable structure
+\texttt{S} is a type arguments to a structure of parametric type, as in 
+Figure \ref{fig:localdeclbefore}. There are cases in which we \textit{do} 
+want to completely split these definitions and those cases will be discussed
+in detail in \ref{sec:param}, but in general we want to tuplify in 
+order to preserve correct semantics while keeping locality benefits.
+\todo{Maybe give a specific example}
 
-% \begin{figure*}
-%   \begin{minipage}[t]{0.5\linewidth}
-% \begin{minted}{rust}
-% // This declaration...
-% let _1: S;
-% \end{minted}
-%   \end{minipage}
-%   \begin{minipage}[t]{0.5\linewidth}
-% \begin{minted}{rust}
-% // ... turns into this
-% let _1: S1;
-% let _2: S2;
-% let _3: S3;
-% \end{minted}
-%   \end{minipage}
-  
-%   \caption{Simple Local Declarations Splitting $g = 3$}
-%   \label{fig:localdeclbefore}
-% \end{figure*}
+\begin{figure*}
+  \begin{minipage}[t]{0.5\linewidth}
+\begin{minted}{rust}
+// This declaration...
+let _1: T<S>;
+\end{minted}
+  \end{minipage}
+  \begin{minipage}[t]{0.5\linewidth}
+\begin{minted}{rust}
+// ... turns into this
+let _1: T<(S1, S2, S3>;
+\end{minted}
+  \end{minipage}
+  \caption{Simple Local Declarations Splitting $g = 3$}
+  \label{fig:localdeclbefore}
+\end{figure*}
 
 % \todo[inline]{Need to talk about splitting function arguments}
 % Of course deciding whether or not to split a declaration is not a easy as just
@@ -412,24 +414,16 @@ let _9: [S3, 10000];
   \label{fig:refedecl}
 \end{figure*}
 
-% We can safely ignore primitive and internal types. References, and
-% arrays are split by checking by recursively checking their referent types
-% and splitting them if they are splittable, as in Figure \ref{fig:refedecl}.
+\subsection{Splitting}
+\label{sec:splitting}
 
-% Tuples are where decisions start to become complicated, because splitting tuples 
-% can lead to some unacceptable run time overheads. If we just split the tuple as we did the
-% reference and array cases, where we just create $g$ tuples for each substructure, we are 
-% wasting a good deal of time and memory reproducing the assignments to the other elements
-% in the tuple. 
+Actually splitting variable declarations is important since it is where
+locality benefits actually come in. 
 
-% As long as we do not split a tuple with more then one structure, tuples are
-% also the same. Why we can't split multiple structures in a tuple is discussed in
-% Section \ref{sec:limits}.
 
-\subsection{Structures}
-Structures are very easy in the case that the structure is exactly what we are
-looking for. Where things get tricky is when some other structure is
-parameterized by the structure we are interested in. This case is very important
+\subsubsection{Structures}
+\label{sec:param}
+This case is very important
 to handle correctly, since generic structures are very common in \rust. The most common,
 and thankfully the easiest to deal with, is \vec. \vec is the \rust structure analygous
 to the \cpp \texttt{std::vector}. It is used practically everywhere, properly handling it
@@ -441,24 +435,6 @@ The current method of handling this is a whitelist of some of the most common co
 in the \rust standard library, with the ability for users to declare their container as split-friendly.
 Benefits of this will be discussed in Section \ref{sec:discuss}.
 
-\subsection{Function Pointers}
-Functions pointers aren't split in the same way that other types might be, but
-we still need to modify their type signature so that we can call them in a way
-that preserves our structure splitting benefits. Essentially we walk through the
-signature of the function and replace each splittable structure with a tuple
-of each of it's substructures. This works because we walk through each argument and 
-return value \textit{recursively}, which means that if the function accepts a reference
-to a splittable structure we modify it so it takes a tuple of references to substructures.
-This is important because iteration in \rust often uses the function \texttt{map}, which
-takes in an anonymous function whose arguments are references. 
-
-We are only modifying the signature of the function here, in Section \ref{sec:assign} we will
-discuss how we modify the contents of the function in order to actually perform structure
-splitting.
-
-\todo[inline]{Finish this}
-
-\todo[inline]{Talk about functions}
 
 \section{Assignment replacement}
 \label{sec:assign}
@@ -488,43 +464,6 @@ while I was successful is performing locality based
 optimizations in that specific case without the usual run time overhead typical of structure splitting
 work, there is considerably more work to be done until I would consider this
 a project that should be usable by the average user.
-
-% \begin{figure*}
-%  \begin{minted}[autogobble]{rust}
-%     struct Mir {
-%         basic_blocks: Vec<BasicBlockData>,
-%         // ...
-%     }
-
-%     struct BasicBlockData {
-%         statements: Vec<Statement>,
-%         terminator: Terminator,
-%         // ...
-%     }
-
-%     struct Statement {
-%         lvalue: Lvalue,
-%         rvalue: Rvalue
-%     }
-
-%     enum Terminator {
-%         Goto { target: BasicBlock },
-%         If {
-%             cond: Operand,
-%             targets: [BasicBlock; 2]
-%         },
-%         // ...
-%     }
-% \end{minted} 
-%   \caption{Vec Splitting}
-%   \label{fig:vec-split}
-% \end{figure*}
-
-% \todo[inline]{Getting this to work with Vec is actually really important so I might do that this week}
-% The first, and most important, requirement would be to allow for the splitting
-% of certain types of user defined structures. The first, and most obvious,
-% benefit for this would be for splitting various containers, the most obvious
-% being \vec. \vec is the default \rust resizable array class, analagous to \texttt{std::vector}.
 
 \todo[inline]{Talk about applications on locks}
 \todo[inline]{Maybe talk about why not \llvm or \texttt{ghc}}
