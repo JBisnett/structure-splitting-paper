@@ -381,6 +381,26 @@ let _1: T<(S1, S2, S3>;
 \begin{figure*}
   \begin{minipage}[t]{0.5\linewidth}
 \begin{minted}{rust}
+// simple case
+let _1: S;
+\end{minted}
+  \end{minipage}
+  \begin{minipage}[t]{0.5\linewidth}
+\begin{minted}{rust}
+
+let _1: S1;
+let _2: S2;
+let _3: S3;
+
+\end{minted}
+  \end{minipage}
+  
+  \caption{Reference and Array Splitting $g = 3$}
+  \label{fig:localdeclbefore}
+\end{figure*}
+\begin{figure*}
+  \begin{minipage}[t]{0.5\linewidth}
+\begin{minted}{rust}
 // reference
 let _1: &S;
 
@@ -391,6 +411,10 @@ let _2: [S];
 
 // sized array
 let _3: [S, 10000];
+
+
+// sized array of references
+let _4: [&S, 10000];
 
 \end{minted}
   \end{minipage}
@@ -408,6 +432,10 @@ let _6: [S3];
 let _7: [S1, 10000];
 let _8: [S2, 10000];
 let _9: [S3, 10000];
+
+let _10: [&S1, 10000];
+let _11: [&S2, 10000];
+let _12: [&S3, 10000];
 \end{minted}
   \end{minipage}
   
@@ -420,6 +448,15 @@ let _9: [S3, 10000];
 
 Actually splitting variable declarations is important since it is where
 locality benefits actually come in. The simplest case is the one in which
+we find a declaration whose type is one of our split structures. In this 
+case we can split fairly easily, replacing the declaration of the structure with
+declarations for each substructure
+\footnote{This isn't exactly how it works in the code,
+instead of \textit{replacing} the declaration we simply add the substructure declarations.
+This makes the code simpler, but the detail is largely irrelavent to the
+idea, and thus examples will all assume the original declaration is removed.
+It is removed when the translation to \llvmir is completed anyway.}
+
 
 
 \subsubsection{Structures}
