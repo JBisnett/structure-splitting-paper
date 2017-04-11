@@ -307,8 +307,8 @@ structure would need to be aligned properly, making the tuple possibly
 bigger then the sum of it's parts.}. However it is important that we do this to
 ensure semantic correctness, and it does help use preserve locality, since we can
 do the process preserving the recursive type structure, meaning that
-we can convert a reference to a structure \texttt{&S} and convert it into 
-\texttt{&S1, &S2, ..., &Sg}, which preserves the original location of the 
+we can convert a reference to a structure \texttt{\&S} and convert it into 
+\texttt{\&S1, \&S2, ..., \&Sg}, which preserves the original location of the 
 data as opposed to simply reassigning the fields into a \texttt{&S}.
 
 One place we unconditionally perform in place modification is in function
