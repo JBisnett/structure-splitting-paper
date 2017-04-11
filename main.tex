@@ -83,7 +83,7 @@
 \doublespacing
 \label{sec:intro}
 
-\todo[inline]{Safe structure splitting in a general purpose language}
+\todo[inline]{}
 \todo[inline]{Why other languages do not permit safe structure splitting (java: inheritance) (haskell: insufficient control over memory), first structure splitting}
 \todo[inline]{Don't call it a platform, start by saying its a compiler}
 
@@ -210,11 +210,11 @@ execute\footnote{This isn't strictly true since inline assembly is evaluated as
   \todo[inline]{More here}
 
 \chapter{\name: Structure Splitting in Rust}
-
-\name is a structure splitting compiler modification that attempts to fix the issues with
-previous approaches by implementing structure splitting mechanism in \rustc, where static type
-safety and general memory safety allow for structure splitting with little effect on program
-semantics\footnote{Exactly what effect it has is discussed in the next section and section \ref{sec:limits}}.
+\name is a compiler which implements safe structure splitting in 
+a general purpose language. This allows \name to go beyond previous 
+approaches and guarentee no semantic changes in safe \rust.
+\footnote{Exactly what effect it has on unsafe \rust is discussed in the next 
+section and section \ref{sec:limits}}.
 
 \name can be roughly separated into two parts, structure splitting and
 \mir modification.
