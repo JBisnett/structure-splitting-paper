@@ -128,7 +128,8 @@ pitfalls of the two languages.
   \label{fig:bench}
 \end{figure}
 
-Important in that last statement was the fact that \rust has the \textit{potential}
+Important in that last statement was the fact that \rust has the 
+\textit{potential}
 to be as fast as \c, and while it performs in the same order of magnitude, its not
 quite as fast in many cases, as seen in Figure \ref{fig:bench}.
 A potential reason this is that \rust doesn't have the compiler maturity \c has.
@@ -163,8 +164,9 @@ each substructure. This is not a trivial problem, but thankfully a decent
 solution has been found\cite{Zhong:2004:ARS:996893.996872}.
 Essentially running a program one and collecting
 a memory trace one can generate a fairly good estimate of which fields are more
-often accessed together by measuring reuse distances and thus generate a splitting
-which, while not provably optimal, does manage to successfully split structures and
+often accessed together by measuring reuse distances and 
+thus generate a splitting which, while not provably optimal, 
+does manage to successfully split structures and
 provide locality benefit.
 
 While the authors created a great system for automating the structure splitting 
@@ -172,7 +174,22 @@ process they did not find a great way of using said split structures. They did
 use the system in a small research compiler for \c, but it was severely limited
 by the fact that they had to limit their compiler to a subset of \c programs
 which had a fully static type system, had a decent amount of run time overhead, 
-and likely would not have working in parallel programs.
+and would not have worked in parallel programs without significant work.
+
+\c isn't the only language which has problems with structure splitting
+however. It only makes sense for languages whose structures are contiguous
+in memory in the first place, preventing languages such as \texttt{Haskell}.
+from implementing it.  Additionally,\texttt{Java} and 
+other language with inheritance also
+have issues, specifically when dealing with class hierarchies. Structure
+splitting would be limited to one class in each class hierarchy. This would
+make automated splitting a much more difficult problem, as well as 
+make user-defined splitting potentially more confusing.
+
+Given that structure splitting only can work well in a language with
+a strongly static type system with contiguous structures and no inheritance,
+it seems that \rust is one of the few general purpose languages in which
+it would be possible to implement proper structure splitting.
 
 \section{\rustc}
 \label{sec:rustc}
