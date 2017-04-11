@@ -309,7 +309,7 @@ ensure semantic correctness, and it does help use preserve locality, since we ca
 do the process preserving the recursive type structure, meaning that
 we can convert a reference to a structure \texttt{\&S} and convert it into 
 \texttt{\&S1, \&S2, ..., \&Sg}, which preserves the original location of the 
-data as opposed to simply reassigning the fields into a \texttt{&S}.
+data as opposed to simply reassigning the fields into a \texttt{\&S}.
 
 One place we unconditionally perform in place modification is in function
 arguments. This is primarily a simplification measure, since its easier to
