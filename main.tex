@@ -338,19 +338,19 @@ tuple which contains a splittable structure we replace the type of that
 structure with a tuple containing the substructures of that structure, as 
 in Figure \ref{fig:tupletuplify}.
 
-\begin{figure*}[h]
+\begin{figure*}[p]
   \begin{minipage}[t]{0.5\linewidth}
-\begin{listing*}
+\begin{minted}{rust}
 // This declaration...
 let \_1: (&S, int, int);
-\end{listing*}
+\end{minted}
   \end{minipage}
   \begin{minipage}[t]{0.5\linewidth}
-\begin{listing*}
+\begin{minted}{rust}
 // ... turns into this
 
 let \_1: ((&S1, &S2, ...), int, int);
-\end{listing*}
+\end{minted}
   \end{minipage}
   \caption{Tuple Modification}
   \label{fig:tupletuplify}
