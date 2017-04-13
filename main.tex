@@ -230,6 +230,7 @@ execute\footnote{This isn't strictly true since inline assembly is evaluated as
   likely it has been attempted before\todo[inline]{Find a citation for this}}
 
 \chapter{Design}
+\todo[inline]{Switch to just defining equivalent implementation in macro generation.}
 
 \name (STructure-splitting Optimizations for rUsT) is a structure 
 splitting compiler modification that attempts to fix the issues with
@@ -269,7 +270,7 @@ struct S2 {
   pub b: usize,
 }
 \end{minted}
-  \caption{Structure Splitting as a macro}
+  \caption{Structure Splitting}
   \label{fig:split}
 \end{listing}
 
@@ -297,7 +298,6 @@ allowing a manual override is important, or else
 user could potentially prevented from making changes to their code
 since it could break the optimization.
 
-\todo[inline]{I don't like this section}
 Secondly, deciding how to split a structure is already a solved problem,
 but the process is rather expensive. 
 It seems like a better idea to just 
@@ -308,7 +308,6 @@ let them build an already existing tracing solution into their build system
 , and thus get the advantage
 of deciding when and where to spend the computation time.
 
-\todo[inline]{I don't like this section}
 Thirdly, it is important that structure splitting be an ``opt-in'' process.
 While \rust is by default a memory safe language, it has an
 unsafety system in which memory layout of structures could theoretically matter.
@@ -336,7 +335,7 @@ We also tuplify function pointers to ensure our program typechecks.
 Another place we do in place modification is as part of tuples. If we have some
 tuple which contains a splittable structure we replace the type of that
 structure with a tuple containing the substructures of that structure, as 
-in Figure \ref{fig:tupletuplify}.
+in Listing \ref{fig:tupletuplify}.
 
 %\begin{figure*}[p]
   %\begin{minipage}[t]{0.5\linewidth}
@@ -357,7 +356,7 @@ in Figure \ref{fig:tupletuplify}.
 %\end{figure*}
 
 We must do tuplification in type parameters to other structures,
-as in Figure \ref{fig:localdeclbefore}.
+as in Listing \ref{fig:localdeclbefore}.
 In most cases this guarentees that we can pass tuplified versions 
 of our structures in as
 arguments into that other structure's methods, though there are exceptions
@@ -443,7 +442,7 @@ It is removed when the translation to \llvmir is completed anyway.}
 
 Reference are also easy. If we see a variable that is reference to a structure 
 that we can split, we just split that variable into a number of references, 
-one for each substructure, as in Figure \ref{fig:refedecl}.
+one for each substructure, as in Listing \ref{fig:refedecl}.
 
 However, even the simple cases have issues. \name cannot split 
 a structure \texttt{S} if a use of \texttt{S} does not
@@ -520,36 +519,49 @@ cannot be duplicated and zipped.
 Now that we have properly typed variables, we need to replace the assignments
 in each basic block in order to properly use them. The only time we need
 to actually replace an assignment is when it involves a variable which was
-split
+split.  
+Most of the time if we see an assignment containing a split structure
+we just duplicate the assignment, replacing the variables with the proper 
+split variables so that the correct information is in the
+correct place. The only place we do something different is when
+a field of the split structure was access. In that case we 
+just need to replace the declaration with the declaration
+that contains the needed field.
 
 \section{Function Call Modification}
-\label{sec:func}
+\label{sec:funcall}
 
+As was discussed in previous sections, calling functions is one of the trickiest
+parts of the design of \name. 
 
-\section{Assumptions}
-There are certain assumptions we must make in order for our pass to 
-preserve semantic correctness. The first is that all unsafe code that 
-could lead a program which is not strictly typesafe is undefined and thus
-can be ignored.
+If we call a function we modified then we just have to provide the function
+with the arguments it expects.
 
+%\section{Limitations}
+%\label{sec:limits}
+%Currently \name does not support nesting split structures inside other structures.
+%This is completely feasible, but requires some fairly extensive compiler
+%modifications in order to work correctly. Many use cases for this functionality
+%could switch to a tuple based approach.
+
+%\name also doesn't support exporting split structures outside of the current crate.
+%This is because the compiler cannot easily access code out of the crate, and
+%thus cannot modify function definitions to accept the tuple of structures we
+%pass in. This problem could be solved by a few methods, all of which require
+%either significant compiler modification or the introduction of run
+%time cost. 
+
+%\todo[inline]{Should do this}
+%\name doesn't split static assignments, primarily since writing to a static
+%assignment at run time is discouraged.
 \chapter{Preliminary Results}
-\section{Limitations}
-\label{sec:limits}
-Currently \name does not support nesting split structures inside other structures.
-This is completely feasible, but requires some fairly extensive compiler
-modifications in order to work correctly. Many use cases for this functionality
-could switch to a tuple based approach.
+Due to a combination of factors, a fully automated system for \name could not
+be completed in time. As such, evaluation of a full implementation
+was not performed. Some test cases were tested by a limited automated implementation,
+but others were tested by manually contructing the result. Those such cases
+will be marked explicitly, and as implementation continues they should be filled in.
 
-\name also doesn't support exporting split structures outside of the current crate.
-This is because the compiler cannot easily access code out of the crate, and
-thus cannot modify function definitions to accept the tuple of structures we
-pass in. This problem could be solved by a few methods, all of which require
-either significant compiler modification or the introduction of run
-time cost. 
 
-\todo[inline]{Should do this}
-\name doesn't split static assignments, primarily since writing to a static
-assignment at run time is discouraged.
 
 \chapter{Discussion}
 \label{sec:discuss}
