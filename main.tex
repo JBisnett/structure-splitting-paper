@@ -227,7 +227,7 @@ execute\footnote{This isn't strictly true since inline assembly is evaluated as
   Since \mir is so new, it fairly easy to verify that structure splitting has
   not been successfully implemented in the language\footnote{In fact, field
   reordering has only recently been implemented, meaning its even less
-  likely it has been attempted before\todo{Find a citation for this}}
+  likely it has been attempted before\todo[inline]{Find a citation for this}}
 
 \chapter{Design}
 
@@ -361,7 +361,7 @@ as in Figure \ref{fig:localdeclbefore}.
 In most cases this guarentees that we can pass tuplified versions 
 of our structures in as
 arguments into that other structure's methods, though there are exceptions
-discussed in... \todo{write this section, trait impls}
+discussed in... \todo[inline]{write this section, trait impls}
 
 \paragraph{Tuplification and Locality}
 In general tuplification
@@ -471,7 +471,7 @@ provided to them. Some of them, like indexing operations
 and \texttt{Vec::push()}, can be duplicated across split declarations
 while preserving semantic equivalence. However, a large portion of them
 cannot be duplicated without incurring run time cost. How we determine which
-functions are safe and which are not is discussed in \todo{write this section}.
+functions are safe and which are not is discussed in \todo[inline]{write this section}.
 
 We can only split arrays-likes if they cannot possibly
 break some part of the code. This is fairly simple to verify
@@ -481,7 +481,7 @@ a return value ensuring semantic equivalence is difficult.
 
 One solution to this problem is
 to not split any array-like which escapes the current function.
-With aggressive function inlining this \todo{get data on this} could
+With aggressive function inlining this \todo[inline]{get data on this} could
 still provide significant improvement.
 
 A different solution is to also perform recursive checks to see 
@@ -489,7 +489,7 @@ if the function to which the array-like is going could possibly
 put it in a situation which violates semantic equivalence. If 
 so, do not split. This is undoubtable better, but could end up 
 taking significant compiler time, and thus is not implemented. 
-\todo{Actually check to see if this would take too long}
+\todo[inline]{Actually check to see if this would take too long}
 
 \subsection{Iterators}
 There is a specific set of operations which are not trivially duplicatable
@@ -553,7 +553,7 @@ pass in. This problem could be solved by a few methods, all of which require
 either significant compiler modification or the introduction of run
 time cost. 
 
-\todo{Should do this}
+\todo[inline]{Should do this}
 \name doesn't split static assignments, primarily since writing to a static
 assignment at run time is discouraged.
 
