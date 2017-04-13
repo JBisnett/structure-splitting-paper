@@ -250,7 +250,7 @@ and
 
 \section{Structure Splitting}
 
-\begin{listing*}
+\begin{listing}[h]
 \begin{minted}{rust}
 //This annotation...
 #[affinity_groups(a = 1, b = 2, c = 1)]
@@ -271,7 +271,7 @@ struct S2 {
 \end{minted}
   \caption{Structure Splitting as a macro}
   \label{fig:split}
-\end{listing*}
+\end{listing}
 
 Splitting \rust structures is the simplest part of the process. It is currently
 implemented as part of the \rust macro system, where the user of \name
@@ -338,22 +338,22 @@ tuple which contains a splittable structure we replace the type of that
 structure with a tuple containing the substructures of that structure, as 
 in Figure \ref{fig:tupletuplify}.
 
-\begin{listing*}
+%\begin{listing}[h]
   \begin{minipage}[t]{0.5\linewidth}
 \begin{minted}{rust}
 // This declaration...
-let _1: (&S, int, int);
+let \_1: (&S, int, int);
 \end{minted}
   \end{minipage}
   \begin{minipage}[t]{0.5\linewidth}
 \begin{minted}{rust}
 // ... turns into this
-let _1: ((&S1, &S2, ...), int, int);
+let \_1: ((&S1, &S2, ...), int, int);
 \end{minted}
   \end{minipage}
-  \caption{Simple Local Declarations Splitting $g = 3$}
+  \caption{Tuple Modification}
   \label{fig:tupletuplify}
-\end{listing}
+%\end{listing}
 
 We must do tuplification in type parameters to other structures,
 as in Figure \ref{fig:localdeclbefore}.
