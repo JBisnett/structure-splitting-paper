@@ -70,7 +70,7 @@
 \def \ml {\mlname{}\xspace}
 \newcommand{\vecname}{{\texttt{Vec}}}
 \def \vec{\vecname{}\xspace}
-\newcommand{\projectname}{{\texttt{LAGER}}}
+\newcommand{\projectname}{{\texttt{STOUT}}}
 \def \name{\projectname\xspace}
 
 \begin{document}
@@ -156,7 +156,7 @@ together are together, cache performance should improve since more useful
 information can fit on each line.
 
 Performing this optimization, however, requires some work. Firstly one
-needs to decide where to split the structure, which fields should go in
+needs to decide which fields should go into
 each substructure. This is not a trivial problem, but thankfully a decent
 solution has been found\cite{Zhong:2004:ARS:996893.996872}.
 Essentially running a program one and collecting
@@ -191,7 +191,7 @@ it would be possible to implement proper structure splitting.
 \section{\rustc}
 \label{sec:rustc}
 
-\rustc is the most often used, and likely only, compiler for \rust.
+\rustc is the most often used, and essentially only, compiler for \rust.
 \rustc is effectively a series of conversions from
 \rust code to various internal representations and finally into machine code.
 First is tokenizes and converts to an \texttt{AST}, then converts that into a
@@ -229,15 +229,20 @@ execute\footnote{This isn't strictly true since inline assembly is evaluated as
   reordering has only recently been implemented, meaning its even less
   likely it has been attempted before\todo{Find a citation for this}}
 
-\chapter{\name: Structure Splitting in Rust}
+\chapter{Design}
 
-\name is a structure splitting compiler modification that attempts to fix the issues with
-previous approaches by implementing structure splitting mechanism in \rustc, where static type
-safety and general memory safety allow for structure splitting with little effect on program
-semantics\footnote{Exactly what effect it has is discussed in the next section and section \ref{sec:limits}}.
+\name (STructure-splitting Optimizations for rUsT) is a structure 
+splitting compiler modification that attempts to fix the issues with
+previous approaches by implementing structure splitting 
+mechanism in \rustc, where static type
+safety and general memory safety allow for 
+structure splitting with little effect on program
+semantics
+\footnote{Exactly what effect it has is discussed in the next section and section \ref{sec:limits}}.
 
-\name can be roughly separated into two parts, structure splitting and
-\mir modification.
+\name can be roughly separated into five parts, structure splitting, variable
+declaration modification, variable splitting, \mir assignment modification, 
+and \mir function call modification.
 
 \section{Structure Splitting}
 
@@ -265,24 +270,31 @@ struct S2 {
 \end{figure*}
 
 Splitting \rust structures is the simplest part of the process. It is currently
-implemented as part of the \rust macro system, where the user of my library
-would add an annotation, as in Figure \ref{fig:split}, which generates a number
-of smaller structures, each of which contains some subset of it's parent's fields.
-
-Currently this means
+implemented as part of the \rust macro system, where the user of \name
+would add an annotation which generates a number
+of substructures, each of which contains some subset of it's parent's 
+fields. Which fields go in which substructures is decided by arguments 
+in the annotations 
+this means
 that users would need to specify manually how the split the structure. While an
 automated solution is of course possible, it is important for a few reasons that
-the process be manual, at least at the moment. 
+the process be manual, at least at the moment. An example of this
+is in \ref{fig:split}
 
-Firstly it was mandatory that the strategy used for structure splitting be modifiable by the user.
-Since the structure splitting operation is so global and such a potential performance improvement,
-some small change could end up resulting in massive performance gains or losses. Since it is impossible
-to come up with a $100\%$ correct automated strategy, allowing a manual override is important, or else
+Firstly it is mandatory that the strategy used 
+for structure splitting be modifiable by the user.
+Since the structure splitting operation is so global 
+and such a potential performance improvement,
+some small change could end up resulting in 
+massive performance gains or losses. Since it is impossible
+to come up with a $100\%$ correct automated strategy, 
+allowing a manual override is important, or else
 user could potentially prevented from making changes to their code
 since it could break the optimization.
 
 Secondly, deciding how to split a structure is already a solved problem,
-but the process is rather expensive. It seems like a better idea to just 
+but the process is rather expensive. 
+It seems like a better idea to just 
 allow the user to either; one, 
 intelligently reason about there program and split their structure 
 how it makes the most sense, or two, 
@@ -290,34 +302,27 @@ let them build an already existing tracing solution into their build system
 , and thus get the advantage
 of deciding when and where to spend the computation time.
 
-Thirdly, it is important that structure splitting be an ``opt-in" process.
-While \rust is by default a memory safe language, \rust has an
+Thirdly, it is important that structure splitting be an ``opt-in'' process.
+While \rust is by default a memory safe language, it has an
 unsafety system in which memory layout of structures could theoretically matter.
-This is less of a problem since usually when reasoning about structure layouts
-compiler directive are used to prevent the structure from having strange
-layouts, but having an explicit action to activate structure
-splitting is important for the default case. 
+Reasoning about unsafety is currently very difficult in \mir, as
+which regions of code are unsafe is not preserved from the transition
+form \hir.
 
-\todo[inline]{More here}
-\section{\mir modification}
-
-The series of \mir modifications needed to automatically implement structure
-splitting code is made of three parts, variable declaration modification,
-function call modification, and assignment modification.
-
-\subsection{Declaration Modification}
+\section{Declaration Modification}
+In order to properly preserve locality gains, certain variables
 
 Variable declarations can take on one of 22 different types, some of which can
 be parameterized by other types. Our action when we see a type can be divided
 into three cases, no modification, tuplification, and splitting.
 
-\subsubsection{No Modification}
+\subsection{No Modification}
 Some types we do not need to touch. These include primative types such as
 integers, floats, and booleans, as well as internal error types, types used in
 type inference\footnote{\mir occurs after types inference}, and any
 parameterized type that doesn't contain any structure we are interested in.
 
-\subsubsection{Tuplification}
+\subsection{Tuplification}
 For types the can contain one of the split structures, we have two primary
 options, the first being what we will call tuplification of the type.
 
@@ -373,14 +378,6 @@ let _1: T<(S1, S2, S3>;
   \label{fig:localdeclbefore}
 \end{figure*}
 
-% \todo[inline]{Need to talk about splitting function arguments}
-% Of course deciding whether or not to split a declaration is not a easy as just
-% checking if it is exactly what we want.  
-% There are, at time of writing, 22 different kinds of types a variable declaration
-% can have. For the purposes of this paper, these types can be separated into seven
-% groups; primitive, internal, reference, arrays, tuples, structures,
-% and function pointers.
-
 \begin{figure*}
   \begin{minipage}[t]{0.5\linewidth}
 \begin{minted}{rust}
@@ -401,56 +398,61 @@ let _3: S3;
   \caption{Reference and Array Splitting $g = 3$}
   \label{fig:localdeclbefore}
 \end{figure*}
-\begin{figure*}
-  \begin{minipage}[t]{0.5\linewidth}
-\begin{minted}{rust}
-// reference
-let _1: &S;
+%\begin{figure*}
+  %\begin{minipage}[t]{0.5\linewidth}
+%\begin{minted}{rust}
+%// reference
+%let _1: &S;
 
 
-// unsized array (slice)
-let _2: [S];
+%// unsized array (slice)
+%let _2: [S];
 
 
-// sized array
-let _3: [S, 10000];
+%// sized array
+%let _3: [S, 10000];
 
 
-// sized array of references
-let _4: [&S, 10000];
+%// sized array of references
+%let _4: [&S, 10000];
 
-\end{minted}
-  \end{minipage}
-  \begin{minipage}[t]{0.5\linewidth}
-\begin{minted}{rust}
+%\end{minted}
+  %\end{minipage}
+  %\begin{minipage}[t]{0.5\linewidth}
+%\begin{minted}{rust}
 
-let _1: &S1;
-let _2: &S2;
-let _3: &S3;
+%let _1: &S1;
+%let _2: &S2;
+%let _3: &S3;
 
-let _4: [S1];
-let _5: [S2];
-let _6: [S3];
+%let _4: [S1];
+%let _5: [S2];
+%let _6: [S3];
 
-let _7: [S1, 10000];
-let _8: [S2, 10000];
-let _9: [S3, 10000];
+%let _7: [S1, 10000];
+%let _8: [S2, 10000];
+%let _9: [S3, 10000];
 
-let _10: [&S1, 10000];
-let _11: [&S2, 10000];
-let _12: [&S3, 10000];
-\end{minted}
-  \end{minipage}
+%let _10: [&S1, 10000];
+%let _11: [&S2, 10000];
+%let _12: [&S3, 10000];
+%\end{minted}
+  %\end{minipage}
   
-  \caption{Reference and Array Splitting $g = 3$}
-  \label{fig:refedecl}
-\end{figure*}
+  %\caption{Reference and Array Splitting $g = 3$}
+  %\label{fig:refedecl}
+%\end{figure*}
 
-\subsection{Splitting}
+\section{Splitting}
 \label{sec:splitting}
 
 Actually splitting variable declarations is important since it is where
-locality benefits actually come in. The simplest case is the one in which
+locality benefits actually come in. Unfortunately it is also the trickiest
+to get right.
+
+Since we control the 
+
+The simplest case is the one in which
 we find a declaration whose type is one of our split structures. In this 
 case we can split fairly easily, replacing the declaration of the structure with
 declarations for each substructure
@@ -460,45 +462,174 @@ This makes the code simpler, but the detail is largely irrelavent to the
 idea, and thus examples will all assume the original declaration is removed.
 It is removed when the translation to \llvmir is completed anyway.}
 
-References and arrays are handled the same as the simple case, so whenever we 
-see a reference or an array containing a splittable structure, we split the declaration.
-This process holds for any level of nestings. Examples of this
-can be seen in Figure \ref{sec:splitting}.
+References are handled the same as the simple case, so whenever we 
+see a reference containing a splittable structure, we split the declaration.
+This process holds for any level of nestings. 
 
-\todo[inline]{This needs a lot of work, and might not even get implemented in time}
-\todo[inline]{Vec doesn't work out of the box since sort\_by, sort\_by\_key, and 
-binary\_search\_by exist.
-Maybe should do something smart if the method has a function parameter that takes in
-the structure? Maybe iterate and collect? Possibly create a function in Vec that 
-takes in a member function and runs in on a tuple? There is potential this should be moved
-to future work section. Maybe just abort compilation if these functions are called on
-split Vec's? There should be a general solution to this.
-Might have to require run time cost in these cases, iterate then zip then apply then
-unzip and return}
+\subsection{Arrays}
+Splitting arrays, slices, and vectors in \rust is where things start
+to get tricky. All of those containers have many useful methods
+provided to them. Some of them, like indexing operations 
+and \texttt{Vec::push()}, can be duplicated across split declarations
+while preserving semantic equivalence. However, a large portion of them
+cannot be duplicated without incurring run time cost. How we determine which
+functions are safe and which are not is discussed in \ref{sec:safefn}
+
+Since this is the case, we can only split arrays-likes if they cannot possibly
+break some part of the code. Reasoning about this inside a function is 
+fairly easy, but reasoning as the array-like crosses function boundries 
+either as an argument to a function call or as a return value makes
+this significantly harder. 
+
+One solution to this problem is
+to not split any array which does escape the current function.
+This approach works fine with inlined functions, but
+does make it less likely that a user of \name would see 
+performance improvements out of the box.
+
+Another solution would be check to see if functions perform any of our
+blacklisted functions recursively
+
+\subsection{Iterators}
+There is a specific set of operations which are not trivially duplicatable
+where we can preserve semantic correctness, however. 
+Function that return a simple iterator, such as 
+\texttt{into\_iter()} and \texttt{iter\_mut()}, can be duplicated correctly
+if the resulting iterators are zipped together. 
+Zipping is an operation whereby
+two iterators of type \texttt{Iterator<A>} and \texttt{Iterator<B>}
+are turned into a single iterator of type \texttt{Iterator<(A,B)>}
+Because iterators in \rust are lazy, zipping iterators together incurs 
+little run time cost.
+
+This does assume that transforming an iterator of type \texttt{Iterator<S>}
+into an iterator of type \texttt{Iterator<(S1, S2, ...)>} won't break 
+some part of the code. This can be solved by only allowing iterators to 
+split if the iterator stays inside the current function an
+
+
+Arrays, slices, vectors, and iterators have a fairly stable API and 
+identifying which function belong in which cases are fairly simple. 
+However, if an array or slice is passed as an argument to a function,
+or returned from a function, it is difficult to reason about what 
+could happen to it. One answer is to not split any declaration which
+escapes the scope of the function or calls a problem function, but 
+that would make the gains rather minimal. Another approach is discussed 
+in Section \ref{sec:functioncalls};
+
+Array and slice functions can be seperated into three cases; those that
+are safe to duplicate with no additional \mir modification,
+those that are safe to split with some modification, 
+and those that are not safe to split
+without significant work and run time cost.
+
+For an array containing some splittable structure \texttt{S},
+safe functions are those that take in some argument that isn't \texttt{S}.
+The functions that do this are either some variant of \texttt{swap}
+\footnote{switch two indicies} or some form of indexing. 
+
+One set of functions that require some modification but are correct are
+those that return an iterator. Splitting iterators in some way
+is very important since they are one of the primary methods of 
+iteration in \rust, and thus iteration 
+Since iterators in \rust are lazy, ``zipping'' iterators together is
+low cost. The \mir modification is 
+then to duplicate whatever function generates the iterator, then
+zip all those duplicated iterators together into one iterator
+\footnote{This does require that the iterator is only duplicated
+six or less times, since six is the maximum number of
+iterators that can be zipped together}.
+
+Not all iterators methods can be safely duplicated in that way however. 
+Some return special iterators whose semantics are not necissarily
+the same as the basic iteration functions. The semantics could be 
+reconstructed in some cases, but not simply by a zip. Additionally,
+any iterator that escaped where the compiler can reason about it
+can't be zipped. 
+
+Iterators also have some methods in where 
+\texttt{Iterator<S>} does not necissarily behave the same as 
+\texttt{Iterator<(S1, S2, ...)>}, and when that is the case the iterator
+cannot be duplicated and zipped.
+
+There are many functions that cannot be safely duplicated however.
+Any function which returns a ``special'' iterator can't necissarily
+be safely duplicated since it could have other functions not preserved 
+by the zip.
+Functions that cannot be duplicated are those are depend on \texttt{S}
+implementing \texttt{Ord}. These
 
 \subsubsection{Structures}
 \label{sec:param}
-While in the general case we do not split a structure when it is parameterized by
-a splittable structure, there are cases in which we want to split the base structure
+While in the general case we do not split a structure when 
+it is parameterized by
+a splittable structure, there are cases in 
+which we want to split the base structure
 instead of just tuplifying the splittable structure. It is very important
-that we handle this correctly, since generic structures are very common in \rust. The most common,
-and thankfully the easiest to deal with, is \vec. \vec is the \rust structure analygous
-to the \cpp \texttt{std::vector}. It is used practically everywhere, so properly handling it
-is extremely important. Most of the applications we would be targeting would be storing
-their structures in a \vec, so not handling would result in structure splitting being
+that we handle this correctly, since generic structures 
+are very common in \rust. The most common,
+and thankfully the easiest to deal with, 
+is \vec. \vec is the \rust structure analygous
+to the \cpp \texttt{std::vector}. 
+It is used practically everywhere, so properly handling it
+is extremely important. Most of the applications 
+we would be targeting would be storing
+their structures in a \vec, 
+so not handling would result in structure splitting being
 rather ineffective.
 
-The current method of handling this is a whitelist of some of the most common containers
-in the \rust standard library, with the ability for users to declare their container as 
-split-friendly.
+\todo[inline]{Probably should do something smart with traits}
+
+However, just simply splitting \vec as we do arrays doesn't work
+in all cases.
+
+\begin{float}
+\begin{minted}{rust}
+struct T {
+	pub a: usize,
+	pub b: usize,
+}
+#[affinity_groups(a = 1, b = 2)]
+struct S {
+	pub a: usize,
+	pub b: usize,
+}
+
+fn foo() {
+	let whole = vec![T{a: 1, b: 2}, T{a: 2, b: 1};
+	// let split = vec![S{a: 1, b: 2}, S{a: 2, b: 1}];
+	let split_1 = vec![S1{a: 1}, S1{a: 2}];
+	let split_2 = vec![S2{b: 2}, S2{b: 2}];
+	whole.sort_by(|ref t1, ref t2| s1.a < s2.a);
+	// split.sort_by(|ref s1, ref s2| s1.a < s2.a);
+}
+\end{minted}
+\caption{Splitting \vec \texttt{sort\_by}}
+\end{float}
+The current method of handling this is a whitelist of some of the most common containers in the \rust standard library, 
+with the ability for users to declare their container as split-friendly.  
 Benefits of this will be discussed in Section \ref{sec:discuss}.
 
-\section{Function Call Modification}
-\label{sec:func}
 
 \section{Assignment Replacement}
 \label{sec:assign}
 
+Now that we have properly typed variables, we need to replace the assignments
+in each basic block in order to properly use them. The only time we need
+to actually replace an assignment is when it involves a variable which was
+split 
+
+\section{Function Call Modification}
+\label{sec:func}
+
+
+\section{Assumptions}
+There are certain assumptions we must make in order for our pass to 
+preserve semantic correctness. The first is that all unsafe code that 
+could lead a program which is not strictly typesafe is undefined and thus
+can be ignored.
+
+\chapter{Preliminary Results}
 \section{Limitations}
 \label{sec:limits}
 Currently \name does not support nesting split structures inside other structures.
@@ -512,6 +643,10 @@ thus cannot modify function definitions to accept the tuple of structures we
 pass in. This problem could be solved by a few methods, all of which require
 either significant compiler modification or the introduction of run
 time cost. 
+
+\todo{Should do this}
+\name doesn't split static assignments, primarily since writing to a static
+assignment at run time is discouraged.
 
 \chapter{Discussion}
 \label{sec:discuss}
