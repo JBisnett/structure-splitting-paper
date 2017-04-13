@@ -338,22 +338,23 @@ tuple which contains a splittable structure we replace the type of that
 structure with a tuple containing the substructures of that structure, as 
 in Figure \ref{fig:tupletuplify}.
 
-%\begin{listing}[h]
+\begin{figure*}[h]
   \begin{minipage}[t]{0.5\linewidth}
-\begin{minted}{rust}
+\begin{listing*}
 // This declaration...
 let \_1: (&S, int, int);
-\end{minted}
+\end{listing*}
   \end{minipage}
   \begin{minipage}[t]{0.5\linewidth}
-\begin{minted}{rust}
+\begin{listing*}
 // ... turns into this
+
 let \_1: ((&S1, &S2, ...), int, int);
-\end{minted}
+\end{listing*}
   \end{minipage}
   \caption{Tuple Modification}
   \label{fig:tupletuplify}
-%\end{listing}
+\end{figure*}
 
 We must do tuplification in type parameters to other structures,
 as in Figure \ref{fig:localdeclbefore}.
@@ -373,19 +374,19 @@ tuple itself, meaning that we take \texttt{\&S} and convert it into
 \texttt{(\&S1, \&S2, ...)}. This keeps the original location of our 
 substructure intact, thus preserving locality benefits.
 
-\begin{listing*}
+\begin{listing*}[p]
   \begin{minipage}[t]{0.5\linewidth}
-\begin{minted}{rust}
+\begin{listing}
 // For some structure 
 // parameterized by T
 let \_1: T<S>;
-\end{minted}
+\end{listing}
   \end{minipage}
   \begin{minipage}[t]{0.5\linewidth}
-\begin{minted}{rust}
+\begin{listing}
 
 let \_1: T<(S1, S2, S3>;
-\end{minted}
+\end{listing}
   \end{minipage}
   \caption{Structure Argument Splitting}
   \label{fig:localdeclbefore}
