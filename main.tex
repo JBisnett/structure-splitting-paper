@@ -103,7 +103,7 @@ the only popular language that provides this level of safety with little to no o
 making it potentially as fast as \c and \cpp while avoiding many of the
 pitfalls of the two languages.
 
-\begin{figure}
+\begin{listing}
   \centering
 \begin{tabular}{r|c|c}
   Test&Rust&C\\
@@ -123,7 +123,7 @@ pitfalls of the two languages.
   between how fast languages perform when used naturally.\cite{bench}
   \caption{Rust vs C Microbenchmarks}
   \label{fig:bench}
-\end{figure}
+\end{listing}
 
 Important in that last statement was the fact that \rust has the 
 \textit{potential}
@@ -250,7 +250,7 @@ and
 
 \section{Structure Splitting}
 
-\begin{figure*}
+\begin{listing*}
 \begin{minted}{rust}
 //This annotation...
 #[affinity_groups(a = 1, b = 2, c = 1)]
@@ -271,7 +271,7 @@ struct S2 {
 \end{minted}
   \caption{Structure Splitting as a macro}
   \label{fig:split}
-\end{figure*}
+\end{listing*}
 
 Splitting \rust structures is the simplest part of the process. It is currently
 implemented as part of the \rust macro system, where the user of \name
@@ -338,7 +338,7 @@ tuple which contains a splittable structure we replace the type of that
 structure with a tuple containing the substructures of that structure, as 
 in Figure \ref{fig:tupletuplify}.
 
-\begin{figure*}
+\begin{listing*}
   \begin{minipage}[t]{0.5\linewidth}
 \begin{minted}{rust}
 // This declaration...
@@ -353,7 +353,7 @@ let _1: ((&S1, &S2, ...), int, int);
   \end{minipage}
   \caption{Simple Local Declarations Splitting $g = 3$}
   \label{fig:tupletuplify}
-\end{figure*}
+\end{listing*}
 
 We must do tuplification in type parameters to other structures,
 as in Figure \ref{fig:localdeclbefore}.
@@ -373,7 +373,7 @@ tuple itself, meaning that we take \texttt{\&S} and convert it into
 \texttt{(\&S1, \&S2, ...)}. This keeps the original location of our 
 substructure intact, thus preserving locality benefits.
 
-\begin{figure*}
+\begin{listing*}
   \begin{minipage}[t]{0.5\linewidth}
 \begin{minted}{rust}
 // For some structure 
@@ -389,9 +389,9 @@ let \_1: T<(S1, S2, S3>;
   \end{minipage}
   \caption{Structure Argument Splitting}
   \label{fig:localdeclbefore}
-\end{figure*}
+\end{listing*}
 
-%\begin{figure*}
+%\begin{listing*}
   %\begin{minipage}[t]{0.5\linewidth}
 %\begin{minted}{rust}
 %// simple case
@@ -410,8 +410,8 @@ let \_1: T<(S1, S2, S3>;
   
   %\caption{Reference and Array Splitting $g = 3$}
   %\label{fig:localdeclbefore}
-%\end{figure*}
-\begin{figure*}
+%\end{listing*}
+\begin{listing*}
   \begin{minipage}[t]{0.5\linewidth}
 \begin{minted}{rust}
 // Before splitting
@@ -427,7 +427,7 @@ let _2: &S2;
   \end{minipage}
   \caption{Reference Splitting}
   \label{fig:refedecl}
-\end{figure*}
+\end{listing*}
 
 \section{Splitting}
 \label{sec:splitting}
