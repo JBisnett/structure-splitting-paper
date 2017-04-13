@@ -338,23 +338,23 @@ tuple which contains a splittable structure we replace the type of that
 structure with a tuple containing the substructures of that structure, as 
 in Figure \ref{fig:tupletuplify}.
 
-\begin{figure*}[p]
-  \begin{minipage}[t]{0.5\linewidth}
-\begin{minted}{rust}
-// This declaration...
-let \_1: (&S, int, int);
-\end{minted}
-  \end{minipage}
-  \begin{minipage}[t]{0.5\linewidth}
-\begin{minted}{rust}
-// ... turns into this
+%\begin{figure*}[p]
+  %\begin{minipage}[t]{0.5\linewidth}
+%\begin{minted}{rust}
+%// This declaration...
+%let \_1: (&S, int, int);
+%\end{minted}
+  %\end{minipage}
+  %\begin{minipage}[t]{0.5\linewidth}
+%\begin{minted}{rust}
+%// ... turns into this
 
-let \_1: ((&S1, &S2, ...), int, int);
-\end{minted}
-  \end{minipage}
-  \caption{Tuple Modification}
-  \label{fig:tupletuplify}
-\end{figure*}
+%let \_1: ((&S1, &S2, ...), int, int);
+%\end{minted}
+  %\end{minipage}
+  %\caption{Tuple Modification}
+  %\label{fig:tupletuplify}
+%\end{figure*}
 
 We must do tuplification in type parameters to other structures,
 as in Figure \ref{fig:localdeclbefore}.
@@ -374,23 +374,23 @@ tuple itself, meaning that we take \texttt{\&S} and convert it into
 \texttt{(\&S1, \&S2, ...)}. This keeps the original location of our 
 substructure intact, thus preserving locality benefits.
 
-\begin{listing*}[p]
-  \begin{minipage}[t]{0.5\linewidth}
-\begin{listing}
-// For some structure 
-// parameterized by T
-let \_1: T<S>;
-\end{listing}
-  \end{minipage}
-  \begin{minipage}[t]{0.5\linewidth}
-\begin{listing}
+%\begin{listing*}[p]
+  %\begin{minipage}[t]{0.5\linewidth}
+%\begin{listing}
+%// For some structure 
+%// parameterized by T
+%let \_1: T<S>;
+%\end{listing}
+  %\end{minipage}
+  %\begin{minipage}[t]{0.5\linewidth}
+%\begin{listing}
 
-let \_1: T<(S1, S2, S3>;
-\end{listing}
-  \end{minipage}
-  \caption{Structure Argument Splitting}
-  \label{fig:localdeclbefore}
-\end{listing*}
+%let \_1: T<(S1, S2, S3>;
+%\end{listing}
+  %\end{minipage}
+  %\caption{Structure Argument Splitting}
+  %\label{fig:localdeclbefore}
+%\end{listing*}
 
 %\begin{listing*}
   %\begin{minipage}[t]{0.5\linewidth}
@@ -412,23 +412,23 @@ let \_1: T<(S1, S2, S3>;
   %\caption{Reference and Array Splitting $g = 3$}
   %\label{fig:localdeclbefore}
 %\end{listing*}
-\begin{listing*}
-  \begin{minipage}[t]{0.5\linewidth}
-\begin{minted}{rust}
-// Before splitting
-let _1: &S;
-\end{minted}
-  \end{minipage}
-  \begin{minipage}[t]{0.5\linewidth}
-\begin{minted}{rust}
-// After splitting.
-let _1: &S1;
-let _2: &S2;
-\end{minted}
-  \end{minipage}
-  \caption{Reference Splitting}
-  \label{fig:refedecl}
-\end{listing*}
+%\begin{listing*}
+  %\begin{minipage}[t]{0.5\linewidth}
+%\begin{minted}{rust}
+%// Before splitting
+%let _1: &S;
+%\end{minted}
+  %\end{minipage}
+  %\begin{minipage}[t]{0.5\linewidth}
+%\begin{minted}{rust}
+%// After splitting.
+%let _1: &S1;
+%let _2: &S2;
+%\end{minted}
+  %\end{minipage}
+  %\caption{Reference Splitting}
+  %\label{fig:refedecl}
+%\end{listing*}
 
 \section{Splitting}
 \label{sec:splitting}
@@ -652,10 +652,3 @@ can be split completely as opposed to just tuplified.
 \bibliography{main}{}
 \bibliographystyle{acm}
 \end{document}
-%%% Local Variables:
-%%% coding: utf-8
-%%% mode: latex
-%%% TeX-engine: pdflatex
-%%% TeX-master: t
-%%% TeX-command-extra-options: "-shell-escape"
-%%% End:
