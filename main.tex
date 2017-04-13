@@ -374,61 +374,61 @@ tuple itself, meaning that we take \texttt{\&S} and convert it into
 \texttt{(\&S1, \&S2, ...)}. This keeps the original location of our 
 substructure intact, thus preserving locality benefits.
 
-%\begin{listing*}[p]
-  %\begin{minipage}[t]{0.5\linewidth}
-%\begin{listing}
-%// For some structure 
-%// parameterized by T
-%let \_1: T<S>;
-%\end{listing}
-  %\end{minipage}
-  %\begin{minipage}[t]{0.5\linewidth}
-%\begin{listing}
+\begin{listing*}[p]
+  \begin{minipage}[t]{0.5\linewidth}
+\begin{listing}
+// For some structure 
+// parameterized by T
+let \_1: T<S>;
+\end{listing}
+  \end{minipage}
+  \begin{minipage}[t]{0.5\linewidth}
+\begin{listing}
 
-%let \_1: T<(S1, S2, S3>;
-%\end{listing}
-  %\end{minipage}
-  %\caption{Structure Argument Splitting}
-  %\label{fig:localdeclbefore}
-%\end{listing*}
+  let \_1: T<(S1, S2, S3)>;
+\end{listing}
+  \end{minipage}
+  \caption{Structure Argument Splitting}
+  \label{fig:localdeclbefore}
+\end{listing*}
 
-%\begin{listing*}
-  %\begin{minipage}[t]{0.5\linewidth}
-%\begin{minted}{rust}
-%// simple case
-%let _1: S;
-%\end{minted}
-  %\end{minipage}
-  %\begin{minipage}[t]{0.5\linewidth}
-%\begin{minted}{rust}
+\begin{listing*}
+  \begin{minipage}[t]{0.5\linewidth}
+\begin{minted}{rust}
+// simple case
+let _1: S;
+\end{minted}
+  \end{minipage}
+  \begin{minipage}[t]{0.5\linewidth}
+\begin{minted}{rust}
 
-%let _1: S1;
-%let _2: S2;
-%let _3: S3;
+let _1: S1;
+let _2: S2;
+let _3: S3;
 
-%\end{minted}
-  %\end{minipage}
+\end{minted}
+  \end{minipage}
   
-  %\caption{Reference and Array Splitting $g = 3$}
-  %\label{fig:localdeclbefore}
-%\end{listing*}
-%\begin{listing*}
-  %\begin{minipage}[t]{0.5\linewidth}
-%\begin{minted}{rust}
-%// Before splitting
-%let _1: &S;
-%\end{minted}
-  %\end{minipage}
-  %\begin{minipage}[t]{0.5\linewidth}
-%\begin{minted}{rust}
-%// After splitting.
-%let _1: &S1;
-%let _2: &S2;
-%\end{minted}
-  %\end{minipage}
-  %\caption{Reference Splitting}
-  %\label{fig:refedecl}
-%\end{listing*}
+  \caption{Reference and Array Splitting $g = 3$}
+  \label{fig:localdeclbefore}
+\end{listing*}
+\begin{listing*}
+  \begin{minipage}[t]{0.5\linewidth}
+\begin{minted}{rust}
+// Before splitting
+let _1: &S;
+\end{minted}
+  \end{minipage}
+  \begin{minipage}[t]{0.5\linewidth}
+\begin{minted}{rust}
+// After splitting.
+let _1: &S1;
+let _2: &S2;
+\end{minted}
+  \end{minipage}
+  \caption{Reference Splitting}
+  \label{fig:refedecl}
+\end{listing*}
 
 \section{Splitting}
 \label{sec:splitting}
