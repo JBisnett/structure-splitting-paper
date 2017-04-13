@@ -376,26 +376,22 @@ substructure intact, thus preserving locality benefits.
 
 \begin{listing*}[p]
   \begin{minipage}[t]{0.5\linewidth}
-\begin{listing}
-// For some structure 
-// parameterized by T
-let \_1: T<S>;
-\end{listing}
+\begin{minted}{rust}
+let _1: T<S>;
+\end{minted}
   \end{minipage}
   \begin{minipage}[t]{0.5\linewidth}
-\begin{listing}
-
-  let \_1: T<(S1, S2, S3)>;
-\end{listing}
+\begin{minted}{rust}
+  let _1: T<(S1, S2, S3)>;
+\end{minted}
   \end{minipage}
-  \caption{Structure Argument Splitting}
+  \caption{Structure Argument Tuplification}
   \label{fig:localdeclbefore}
 \end{listing*}
 
 \begin{listing*}
   \begin{minipage}[t]{0.5\linewidth}
 \begin{minted}{rust}
-// simple case
 let _1: S;
 \end{minted}
   \end{minipage}
@@ -415,13 +411,11 @@ let _3: S3;
 \begin{listing*}
   \begin{minipage}[t]{0.5\linewidth}
 \begin{minted}{rust}
-// Before splitting
 let _1: &S;
 \end{minted}
   \end{minipage}
   \begin{minipage}[t]{0.5\linewidth}
 \begin{minted}{rust}
-// After splitting.
 let _1: &S1;
 let _2: &S2;
 \end{minted}
