@@ -169,7 +169,7 @@ Much of the semantics of \rust were encoded in the process. To make this
 process easier, a second internal representation was created, called \mir.	
 
 
-\subsubsubsection{\mir}
+\subsection{\mir}
 \mir is fairly new; it was released in April 2016\cite{mirintro}. It acts as a
 intermediary between the second of \rust's AST representations, known as \hir,
 and \llvmir.
@@ -266,12 +266,16 @@ define a trait \texttt{Splittable} and then implement that
 trait for each tuple of substructures.
 \texttt{Splittable} is used to essentially redefine
 the methods of array, slice, and \vec 
-to allow them to be called on tuples of split
-arrays, slices, and \vec's.  These redefinitions are mostly minimal
-and obvious; 
+to allow them to be called on tuples of split arrays, slices, and \vec's.  
+These redefinitions are mostly minimal and obvious; 
 \texttt{push()} pushes the appropriate structure onto the appropriate
 vector, \texttt{iter()} calls \texttt{iter()} on all
 elements in the tuple and zips them together, and others.
+This process is extensible to other data structures. Users can
+define their own implementation of splittable, but they
+are responcible for making sure that the implementation is correct.
+\name checks to see if a function has been redefined in this
+way, and replaces it as needed as part of Section \ref{sec:funcall}.
 
 We also want to define a tuple of reference of substructures 
 to be coercible to a reference of tuple of references. Why this is 
@@ -462,37 +466,7 @@ that we can split, we just split that variable keeping the original
 types around each substructure, 
 one for each substructure, as in Listing \ref{fig:refedecl}.
 
-
-          %\subsubsubsection{Iterators}
-%There is a specific set of operations which are not trivially duplicatable
-%where we can preserve semantic correctness, however. 
-%Function that return a simple iterator, such as 
-%\texttt{into\_iter()} and \texttt{iter\_mut()}, can be duplicated correctly
-%if the resulting iterators are zipped together. 
-%Zipping is an operation whereby
-%two iterators of type \texttt{Iterator<A>} and \texttt{Iterator<B>}
-%are turned into a single iterator of type \texttt{Iterator<(A,B)>}
-%Because iterators in \rust are lazy, zipping iterators together incurs 
-%little run time cost.
-
-%This does assume that transforming an iterator of type \texttt{Iterator<S>}
-%into an iterator of type \texttt{Iterator<(S1, S2, ...)>} won't break 
-%some part of the code. This can be solved by only allowing iterators to 
-%split if the iterator stays inside the current function an
-
-%Not all iterators methods can be safely duplicated in that way however. 
-%Some return special iterators whose semantics are not necissarily
-%the same as the basic iteration functions. The semantics could be 
-%reconstructed in some cases, but not simply by a zip. Additionally,
-%any iterator that escaped where the compiler can reason about it
-%can't be zipped. 
-
-%Iterators also have some methods in where 
-%\texttt{Iterator<S>} does not necissarily behave the same as 
-%\texttt{Iterator<(S1, S2, ...)>}, and when that is the case the iterator
-%cannot be duplicated and zipped.
-
-\subsubsubsection{Assignment Modification}
+\subsubsection{Assignment Modification}
 \label{sec:assign}
 
 Now that we have properly typed variables, we need to replace the assignments
@@ -507,28 +481,31 @@ a field of the split structure was access. In that case we
 just need to replace the declaration with the declaration
 that contains the needed field.
 
-\subsubsubsection{Function Call Modification}
+\subsubsection{Function Call Modification}
 \label{sec:funcall}
 
 Modifying function calls is a little more tricky. 
 
-%\subsection{Limitations}
-%\label{sec:limits}
-%Currently \name does not support nesting split structures inside other structures.
-%This is completely feasible, but requires some fairly extensive compiler
-%modifications in order to work correctly. Many use cases for this functionality
-%could switch to a tuple based approach.
+\subsection{Limitations}
+\label{sec:limits}
+Currently \name does not support defining another structure
+which contains a split structure, since the \rustc macro system
+currently does not allow modification of other parts of the 
+crate. This is of course implementable, but requires extensive
+compiler modification and thus was not attempted.
 
-%\name also doesn't support exporting split structures outside of the current crate.
-%This is because the compiler cannot easily access code out of the crate, and
-%thus cannot modify function definitions to accept the tuple of structures we
-%pass in. This problem could be solved by a few methods, all of which require
-%either significant compiler modification or the introduction of run
-%time cost. 
+\name also doesn't support exporting split structures outside of the 
+current crate.
+This is because the compiler cannot easily access code out of the crate, and
+thus cannot modify function definitions to accept the tuple of structures we
+pass in. This problem could be solved by a few methods, all of which require
+either significant compiler modification or the introduction of run
+time cost. 
 
-%\todo[inline]{Should do this}
-%\name doesn't split static assignments, primarily since writing to a static
-%assignment at run time is discouraged.
+\todo[inline]{Should do this}
+\name doesn't split static assignments, primarily since writing to a static
+assignment at run time is discouraged.
+
 \section{Preliminary Results}
 Due to a combination of factors, a fully automated system for \name could not
 be completed in time. As such, evaluation of a full implementation
@@ -545,52 +522,44 @@ This project is very much more of a platform for further research then a
 standalone project. At the time of writing simple structure splitting
 with arrays and references is all that is completed, and 
 while I was successful is performing locality based
-optimizations in that specific case without the usual run time overhead typical of structure splitting
-work, there is considerably more work to be done until I would consider this
+optimizations in that specific case without the usual 
+run time overhead typical of structure splitting
+work, there is considerably more work to be done until I 
+would consider this
 a project that should be usable by the average user.
 
 \todo[inline]{Talk about applications on locks}
 \todo[inline]{Maybe talk about why not \llvm }
 
-\subsection{Rust Culture}
-\label{sec:culture}
-
-Rust has no good
-formal specification. The specification for \mir are practically non-existent. %https://github.com/rust-specification/english-specification
-The closest thing there is are an RFC proposing \mir, and a blog post announcing
-it, neither of which specify exactly what it can do, and both of which are now
-out of date with the current implementation.
-
-Thus, until \mir stablizes and \rust gets an official standard, it is impossible
-to truly know if this approach will work on all platforms in all cases. As of 
-
-\section{Issues}
-
-While in common cases this approach works very well, there are a few issues with
-it, most of which resulting from the fact that Rust does not have a languages
-standard. As such, it is difficult to be certain that the compiler pass will
-have no semantic effect on the code. It works within the current Rust
-implementation, but manual testing can only be so successful.
-% possibly cite the commit hash?
-
-
 \subsection{Unsafety}
 \label{sec:unsafe}
 
+My implementation makes the implicit assumption that the code
+does not care about the memory layout. While safe 
+\rust is guarenteed not to, unsafe \rust can. Unsafe \rust
+allows for casting and pointer arithmatic, but \rust
+does seem to reserve the right to reorder fields \ref{reorder}.
+It is impossible to say however, since \rust doesn't have a
+formal language standard, much less a standard for unsafe code.
 
-Another major issue is that, because there is no language standard, there is no
-good way of dealing with unsafe code. Unsafe code allows for raw pointer
-arithmetic, which breaks structure splitting. Rust does have the benefit that
-unsafe code must be contained in explicitly declared code blocks.
+
+\subsection{Rust Culture}
+\label{sec:culture}
+
+The fact that \rust doesn't have a formal standard yet should not be shocking
+for anyone that follows the language. The \rust community has a tendency
+to eskew formal documentation on the inner workings of the language.
+The only thing close to documentation for \mir is the RFC it was originally
+specified in \ref{mirrfc}. However, \mir has changed significantly since then 
+and the RFC was not kept up to date. This resulted in a significant time
+sink.
 
 \section{Research Platform}
 
 While \name is complete and functional in itself, it opens the door for 
 a good deal more research to occur in this domain. Increasing the automation
 of the process is definitely important regardless of my hesitence to automate
-the structure splitting process. Of considerable importance is also
-the ability to decide which structures can be considered containers and thus 
-can be split completely as opposed to just tuplified.
+the structure splitting process. 
 
 
 % \section{Notes}
