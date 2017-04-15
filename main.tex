@@ -38,10 +38,8 @@
 \title{\name: Safe Structure Splitting in a General Purpose Language}
 \author{Jacob Bisnett}
 \maketitle
-\pagestyle{fancy}
 \pagenumbering{arabic}
 \section{Introduction}
-\doublespacing
 \label{sec:intro}
 
 The programming language \rust is fairly new, but already gained a considerable
@@ -64,7 +62,7 @@ the only popular language that provides this level of safety with little to no o
 making it potentially as fast as \c and \cpp while avoiding many of the
 pitfalls of the two languages.
 
-\begin{listing}
+\begin{figure}
   \centering
 \begin{tabular}{r|c|c}
   Test&Rust&C\\
@@ -84,7 +82,7 @@ pitfalls of the two languages.
   between how fast languages perform when used naturally.\cite{bench}
   \caption{Rust vs C Microbenchmarks}
   \label{fig:bench}
-\end{listing}
+\end{figure}
 
 Important in that last statement was the fact that \rust has the 
 \textit{potential}
@@ -208,7 +206,7 @@ and \mir modification
 
 \subsection{Structure Splitting}
 
-\begin{listing}[h]
+\begin{figure}[h]
 \begin{minted}{rust}
 //This annotation...
 #[affinity_groups(a = 1, b = 2, c = 1)]
@@ -229,7 +227,7 @@ struct S2 {
 \end{minted}
   \caption{Structure Splitting}
   \label{fig:split}
-\end{listing}
+\end{figure}
 
 Splitting \rust structures is the simplest part of the process. It is currently
 implemented as part of the \rust macro system, where the user of \name
@@ -351,7 +349,7 @@ argument \texttt{S}, either it is in some way parameterized with
 \texttt{(S1, S2, ..)}, or it is a function in our crate, which
 means we have already modified it to accept a tuplified form.
 
-\begin{listing*}[p]
+\begin{figure}[p]
   \begin{minipage}[t]{0.5\linewidth}
 \begin{minted}{rust}
 let _1: T<S>;
@@ -364,9 +362,9 @@ let _1: T<S>;
   \end{minipage}
   \caption{Structure Argument Tuplification}
   \label{fig:localdeclbefore}
-\end{listing*}
+\end{figure}
 
-\begin{listing*}
+\begin{figure}
   \begin{minipage}[t]{0.5\linewidth}
 \begin{minted}{rust}
 let _1: S;
@@ -384,8 +382,8 @@ let _3: S3;
   
   \caption{Reference and Array Splitting $g = 3$}
   \label{fig:localdeclbefore}
-\end{listing*}
-\begin{listing*}
+\end{figure}
+\begin{figure}
   \begin{minipage}[t]{0.5\linewidth}
 \begin{minted}{rust}
 let _1: &S;
@@ -399,7 +397,7 @@ let _2: &S2;
   \end{minipage}
   \caption{Reference Splitting}
   \label{fig:refedecl}
-\end{listing*}
+\end{figure}
 
 \subsubsubsection{Splitting}
 \label{sec:splitting}
