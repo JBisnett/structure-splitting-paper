@@ -291,7 +291,7 @@ The second part of \name is a series of modifications to \mir that actually
 implement the structure splitting, the first of which is modifications performed on
 local variable declarations.
 
-\subsubsubsection{Declaration Modification}
+\subsubsection{Declaration Modification}
 In order to properly preserve locality gains, certain declarations
 we could not otherwise split need to be modified, otherwise we would need
 to write back all our split structures into an original structure to
@@ -396,7 +396,7 @@ let _2: &S2;
   \label{fig:refedecl}
 \end{figure}
 
-\subsubsubsection{Splitting}
+\subsubsection{Splitting}
 \label{sec:splitting}
 \begin{figure*}
   \begin{minipage}[t]{0.5\linewidth}
@@ -479,7 +479,23 @@ that contains the needed field.
 \subsubsection{Function Call Modification}
 \label{sec:funcall}
 
-Modifying function calls is a little more tricky. 
+Modifying functions calls is the last step. We basically just 
+need to tuplify function arguments so that we give them what they
+expect, or switch them out with functions that we can safely use.
+If a function is expecting a tupled variable and we split that
+variable, then we need to wrap the tupled variables in a tuple. 
+If a function was ``overwritten'' as part of the structure 
+splitting macro, then we need to replace that function with
+the new function. 
+
+Handling the return value involves a little bit more work.
+If a function is returning a tuplified version of
+a structure we need to create another basic block in order
+to assign said tuple properly. This is because 
+functions can only be called at the \textit{end} of a 
+basic block for unwinding reasons. The newly created 
+basic block will be used to handle assigning the return value into
+the proper local variables.
 
 \subsection{Limitations}
 \label{sec:limits}
@@ -496,10 +512,6 @@ thus cannot modify function definitions to accept the tuple of structures we
 pass in. This problem could be solved by a few methods, all of which require
 either significant compiler modification or the introduction of run
 time cost. 
-
-\todo[inline]{Should do this}
-\name doesn't split static assignments, primarily since writing to a static
-assignment at run time is discouraged.
 
 \section{Preliminary Results}
 Due to a combination of factors, a fully automated system for \name could not
