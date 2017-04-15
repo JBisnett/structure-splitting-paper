@@ -316,15 +316,12 @@ in Listing \ref{fig:tupletuplify}.
 \begin{figure*}[p]
   \begin{minipage}[t]{0.5\linewidth}
 \begin{minted}{rust}
-// This declaration...
-let \_1: (&S, int, int);
+let _1: (&S, int, int);
 \end{minted}
   \end{minipage}
   \begin{minipage}[t]{0.5\linewidth}
 \begin{minted}{rust}
-// ... turns into this
-
-let \_1: ((&S1, &S2, ...), int, int);
+let _1: ((&S1, &S2, ...), int, int);
 \end{minted}
   \end{minipage}
   \caption{Tuple Modification}
